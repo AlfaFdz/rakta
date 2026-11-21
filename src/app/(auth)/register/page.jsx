@@ -6,7 +6,7 @@ import { registerSupplierAction } from "@/app/actions/auth";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/Card";
-import { UserPlus, ArrowRight, Building2, AlertCircle } from "lucide-react";
+import { UserPlus, Building2, AlertCircle } from "lucide-react";
 
 export default function RegisterSupplierPage() {
   const [state, formAction, isPending] = useActionState(registerSupplierAction, null);
@@ -17,13 +17,13 @@ export default function RegisterSupplierPage() {
         
         {/* Header */}
         <div className="text-center space-y-2">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-[#2583E8] text-white font-bold text-xl shadow-sm mb-1">
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-rakta-primary text-white font-bold text-xl shadow-sm mb-1">
             R
           </div>
-          <h1 className="text-2xl font-bold tracking-tight text-[#102E50]">
+          <h1 className="text-2xl font-bold tracking-tight text-rakta-navy">
             Pendaftaran Rekanan Supplier
           </h1>
-          <p className="text-xs text-[#55718D]">
+          <p className="text-xs text-rakta-muted">
             Bergabung sebagai mitra logistik dan pemasok barang resmi RAKTA
           </p>
         </div>
@@ -33,7 +33,7 @@ export default function RegisterSupplierPage() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle>Informasi Perusahaan &amp; Kontak</CardTitle>
-              <Building2 className="w-5 h-5 text-[#2583E8]" />
+              <Building2 className="w-5 h-5 text-rakta-primary" />
             </div>
             <CardDescription>
               Isi data perusahaan dengan lengkap. Akun akan ditinjau oleh tim kami sebelum aktif.
@@ -118,11 +118,11 @@ export default function RegisterSupplierPage() {
                 Ajukan Pendaftaran <UserPlus className="w-4 h-4 ml-1" />
               </Button>
 
-              <div className="text-center text-xs text-[#55718D] pt-2">
+              <div className="text-center text-xs text-rakta-muted pt-2">
                 Sudah memiliki akun?{" "}
                 <Link
                   href="/login"
-                  className="text-[#2583E8] font-semibold hover:text-[#102E50] transition-colors"
+                  className="text-rakta-primary font-semibold hover:text-rakta-navy transition-colors"
                 >
                   Masuk di sini
                 </Link>

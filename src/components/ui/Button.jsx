@@ -12,10 +12,10 @@ export default function Button({
   const baseStyles = "inline-flex items-center justify-center font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-1 disabled:opacity-50 disabled:cursor-not-allowed select-none rounded-full";
 
   const variants = {
-    primary: "bg-[#2583E8] hover:bg-[#102E50] text-white shadow-sm focus:ring-[#2583E8]/40",
-    secondary: "bg-white border border-[#B9D8F5] text-[#102E50] hover:bg-[#F2F8FF] focus:ring-[#2583E8]/30",
+    primary: "bg-rakta-primary hover:bg-rakta-navy text-white shadow-sm focus:ring-rakta-primary/40",
+    secondary: "bg-rakta-card border border-rakta-subtle text-rakta-navy hover:bg-rakta-surface focus:ring-rakta-primary/30",
     danger: "bg-red-500 hover:bg-red-600 text-white focus:ring-red-400",
-    ghost: "bg-transparent text-[#55718D] hover:bg-[#D4E7FA]/60 hover:text-[#102E50] focus:ring-[#B9D8F5]",
+    ghost: "bg-transparent text-rakta-muted hover:bg-rakta-bg/60 hover:text-rakta-navy focus:ring-rakta-subtle",
   };
 
   const sizes = {

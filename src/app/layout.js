@@ -24,7 +24,7 @@ export default function RootLayout({ children }) {
       lang="id"
       className={`${plusJakartaSans.variable} ${jetbrainsMono.variable} h-full`}
     >
-      <body className="min-h-full flex flex-col font-sans bg-gradient-to-b from-[#DCEBFA] to-[#F2F8FF] text-[#102E50] antialiased selection:bg-[#D4E7FA]">
+      <body className="min-h-full flex flex-col font-sans bg-gradient-to-b from-rakta-bg to-rakta-surface text-rakta-navy antialiased selection:bg-rakta-subtle/50">
         {children}
       </body>
     </html>

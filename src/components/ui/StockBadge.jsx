@@ -19,14 +19,14 @@ export default function StockBadge({
     habis: "bg-slate-100 text-slate-600 border-slate-200",
     kritis: "bg-red-50 text-red-700 border-red-200",
     menipis: "bg-amber-50 text-amber-800 border-amber-200",
-    normal: "bg-[#E8F4FD] text-[#2583E8] border-[#B9D8F5]",
+    normal: "bg-rakta-bg/40 text-rakta-primary border-rakta-subtle",
   };
 
   const dotStyles = {
     habis: "bg-slate-400",
     kritis: "bg-red-500",
     menipis: "bg-amber-500",
-    normal: "bg-[#2583E8]",
+    normal: "bg-rakta-primary",
   };
 
   const styleDipakai = styles[info.kode] || styles.normal;

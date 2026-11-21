@@ -17,13 +17,13 @@ export default function LoginPage() {
         
         {/* Header */}
         <div className="text-center space-y-2">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-[#2583E8] text-white font-bold text-xl shadow-sm mb-1">
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-rakta-primary text-white font-bold text-xl shadow-sm mb-1">
             R
           </div>
-          <h1 className="text-2xl font-bold tracking-tight text-[#102E50]">
+          <h1 className="text-2xl font-bold tracking-tight text-rakta-navy">
             RAKTA
           </h1>
-          <p className="text-xs text-[#55718D]">
+          <p className="text-xs text-rakta-muted">
             Sistem Manajemen Pergudangan &amp; Logistik Terpadu
           </p>
         </div>
@@ -33,7 +33,7 @@ export default function LoginPage() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle>Masuk ke Akun</CardTitle>
-              <LogIn className="w-5 h-5 text-[#2583E8]" />
+              <LogIn className="w-5 h-5 text-rakta-primary" />
             </div>
             <CardDescription>
               Gunakan email terdaftar dan kata sandi Anda untuk mengakses sistem.
@@ -81,11 +81,11 @@ export default function LoginPage() {
                 Masuk Sekarang <ArrowRight className="w-4 h-4 ml-1" />
               </Button>
 
-              <div className="text-center text-xs text-[#55718D] pt-2">
+              <div className="text-center text-xs text-rakta-muted pt-2">
                 Pemasok / Rekanan baru?{" "}
                 <Link
                   href="/register"
-                  className="text-[#2583E8] font-semibold hover:text-[#102E50] transition-colors"
+                  className="text-rakta-primary font-semibold hover:text-rakta-navy transition-colors"
                 >
                   Daftar sebagai Supplier
                 </Link>
