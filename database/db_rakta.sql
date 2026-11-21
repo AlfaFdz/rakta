@@ -142,9 +142,9 @@ CREATE INDEX idx_restock_orders_status ON restock_orders(status);
 -- Akun Default (Password: password123 di-hash menggunakan bcryptjs)
 -- Hash: $2b$10$oQe783ltFIOKhHCp/LyWp.UwLtehrGQL5NDqlUdnBlB.M.jc.AC.S
 INSERT INTO users (nama, email, password_hash, role, status, nama_perusahaan, kontak) VALUES
-('Administrator Gudang', 'admin@rakta.id', '$2b$10$oQe783ltFIOKhHCp/LyWp.UwLtehrGQL5NDqlUdnBlB.M.jc.AC.S', 'admin', 'approved', 'PT Rakta Logistik Utama', '081234567890'),
-('Budi Santoso', 'manager@rakta.id', '$2b$10$oQe783ltFIOKhHCp/LyWp.UwLtehrGQL5NDqlUdnBlB.M.jc.AC.S', 'warehouse_manager', 'approved', 'PT Rakta Logistik Utama', '081234567891'),
-('Ahmad Fauzi', 'staff@rakta.id', '$2b$10$oQe783ltFIOKhHCp/LyWp.UwLtehrGQL5NDqlUdnBlB.M.jc.AC.S', 'staff_gudang', 'approved', 'PT Rakta Logistik Utama', '081234567892');
+('Alfaridzi', 'admin@rakta.id', '$2b$10$oQe783ltFIOKhHCp/LyWp.UwLtehrGQL5NDqlUdnBlB.M.jc.AC.S', 'admin', 'approved', 'PT Rakta Logistik Utama', '081234567890'),
+('Regi Maulana', 'manager@rakta.id', '$2b$10$oQe783ltFIOKhHCp/LyWp.UwLtehrGQL5NDqlUdnBlB.M.jc.AC.S', 'warehouse_manager', 'approved', 'PT Rakta Logistik Utama', '081234567891'),
+('Ilham Kurniawan', 'staff@rakta.id', '$2b$10$oQe783ltFIOKhHCp/LyWp.UwLtehrGQL5NDqlUdnBlB.M.jc.AC.S', 'staff_gudang', 'approved', 'PT Rakta Logistik Utama', '081234567892');
 
 -- Data Kategori Contoh
 INSERT INTO categories (nama, deskripsi, gambar_url) VALUES
