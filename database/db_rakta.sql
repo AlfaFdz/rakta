@@ -77,6 +77,7 @@ CREATE TABLE restock_orders (
     tanggal_order TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     estimasi_tiba DATE,
     status VARCHAR(20) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'confirmed', 'rejected', 'in_transit', 'received')),
+    nomor_resi VARCHAR(100),
     catatan TEXT,
     catatan_status TEXT,
     rating_supplier INT CHECK (rating_supplier BETWEEN 1 AND 5),
@@ -103,7 +104,7 @@ CREATE TABLE restock_items (
 CREATE TABLE transactions (
     id SERIAL PRIMARY KEY,
     nomor_transaksi VARCHAR(100) UNIQUE NOT NULL,
-    tipe VARCHAR(20) NOT NULL CHECK (tipe IN ('masuk', 'keluar')),
+    tipe VARCHAR(20) NOT NULL CHECK (tipe IN ('masuk', 'keluar', 'penyesuaian')),
     tanggal_transaksi TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     restock_order_id INT REFERENCES restock_orders(id) ON DELETE SET NULL,
     supplier_id INT REFERENCES users(id) ON DELETE SET NULL,

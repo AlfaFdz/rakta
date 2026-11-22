@@ -1,0 +1,816 @@
+"use client";
+
+import { useState, useTransition, useActionState } from "react";
+import {
+  createRestockOrderAction,
+  cancelRestockOrderAction,
+  confirmRestockOrderAction,
+  rejectRestockOrderAction,
+  shipRestockOrderAction,
+} from "@/app/actions/restock";
+import Button from "@/components/ui/Button";
+import { formatTanggal } from "@/lib/format";
+import {
+  Truck,
+  Plus,
+  CheckCircle2,
+  XCircle,
+  AlertCircle,
+  Clock,
+  Package,
+  Search,
+  X,
+  Building2,
+  Calendar,
+  Send,
+  Loader2,
+  Info,
+  ShieldAlert,
+} from "lucide-react";
+
+export default function RestockManager({
+  orders = [],
+  suppliers = [],
+  products = [],
+  userRole = "warehouse_manager",
+  userId = null,
+}) {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [modalMode, setModalMode] = useState(null); // 'create' | 'reject' | 'ship' | null
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [feedback, setFeedback] = useState(null);
+  const [isPendingAction, startTransition] = useTransition();
+  const [activeActionId, setActiveActionId] = useState(null);
+
+  // Filter daftar pesanan
+  const filteredOrders = orders.filter((o) => {
+    // 1. Pencarian
+    const q = searchQuery.toLowerCase().trim();
+    const matchSearch =
+      !q ||
+      o.nomor_po?.toLowerCase().includes(q) ||
+      o.supplier_nama?.toLowerCase().includes(q) ||
+      o.supplier_perusahaan?.toLowerCase().includes(q) ||
+      o.items?.some((it) => it.product_nama?.toLowerCase().includes(q) || it.product_sku?.toLowerCase().includes(q));
+
+    // 2. Filter Status
+    const matchStatus = statusFilter === "all" || o.status === statusFilter;
+
+    return matchSearch && matchStatus;
+  });
+
+  // Action state untuk Buat PO (Warehouse Manager)
+  const [createState, createAction, isCreating] = useActionState(async (prev, formData) => {
+    const res = await createRestockOrderAction(prev, formData);
+    if (res?.success) {
+      setModalMode(null);
+      setFeedback({ type: "success", message: res.message });
+      return null;
+    }
+    return res;
+  }, null);
+
+  // Action state untuk Tolak PO (Supplier)
+  const [rejectState, rejectAction, isRejecting] = useActionState(async (prev, formData) => {
+    const res = await rejectRestockOrderAction(prev, formData);
+    if (res?.success) {
+      setModalMode(null);
+      setSelectedOrder(null);
+      setFeedback({ type: "success", message: res.message });
+      return null;
+    }
+    return res;
+  }, null);
+
+  // Action state untuk Kirim PO (Supplier)
+  const [shipState, shipAction, isShipping] = useActionState(async (prev, formData) => {
+    const res = await shipRestockOrderAction(prev, formData);
+    if (res?.success) {
+      setModalMode(null);
+      setSelectedOrder(null);
+      setFeedback({ type: "success", message: res.message });
+      return null;
+    }
+    return res;
+  }, null);
+
+  // Handler Konfirmasi PO (Supplier)
+  const handleConfirmOrder = (order) => {
+    if (!confirm(`Konfirmasi pesanan ${order.nomor_po}? Pesanan akan masuk ke tahap persiapan barang.`)) {
+      return;
+    }
+    setActiveActionId(order.id);
+    startTransition(async () => {
+      const res = await confirmRestockOrderAction(order.id);
+      if (res?.success) {
+        setFeedback({ type: "success", message: res.message });
+      } else {
+        setFeedback({ type: "error", message: res?.error || "Gagal mengonfirmasi pesanan." });
+      }
+      setActiveActionId(null);
+    });
+  };
+
+  // Handler Batalkan PO (Warehouse Manager)
+  const handleCancelOrder = (order) => {
+    if (!confirm(`Apakah Anda yakin ingin membatalkan pesanan ${order.nomor_po}?`)) {
+      return;
+    }
+    setActiveActionId(order.id);
+    startTransition(async () => {
+      const res = await cancelRestockOrderAction(order.id);
+      if (res?.success) {
+        setFeedback({ type: "success", message: res.message });
+      } else {
+        setFeedback({ type: "error", message: res?.error || "Gagal membatalkan pesanan." });
+      }
+      setActiveActionId(null);
+    });
+  };
+
+  // Helper badge status pesanan
+  const getStatusBadge = (status) => {
+    switch (status) {
+      case "pending":
+        return {
+          label: "Menunggu Konfirmasi",
+          classes: "bg-amber-50 text-amber-700 border-amber-200/80",
+          icon: Clock,
+        };
+      case "confirmed":
+        return {
+          label: "Dikonfirmasi / Diproses",
+          classes: "bg-blue-50 text-blue-700 border-blue-200/80",
+          icon: CheckCircle2,
+        };
+      case "in_transit":
+        return {
+          label: "Dalam Pengiriman",
+          classes: "bg-purple-50 text-purple-700 border-purple-200/80",
+          icon: Truck,
+        };
+      case "received":
+        return {
+          label: "Selesai Diterima",
+          classes: "bg-emerald-50 text-emerald-700 border-emerald-200/80",
+          icon: CheckCircle2,
+        };
+      case "rejected":
+        return {
+          label: "Dibatalkan / Ditolak",
+          classes: "bg-rose-50 text-rose-700 border-rose-200/80",
+          icon: XCircle,
+        };
+      default:
+        return {
+          label: status,
+          classes: "bg-rakta-surface text-rakta-navy border-rakta-subtle",
+          icon: Info,
+        };
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Notifikasi Umpan Balik */}
+      {feedback && (
+        <div
+          className={`p-4 rounded-2xl flex items-start justify-between gap-3 border ${
+            feedback.type === "success"
+              ? "bg-emerald-50/80 border-emerald-200 text-emerald-800"
+              : "bg-rose-50/80 border-rose-200 text-rose-800"
+          }`}
+        >
+          <div className="flex items-start gap-2.5">
+            {feedback.type === "success" ? (
+              <CheckCircle2 className="w-5 h-5 text-emerald-600 mt-0.5 shrink-0" />
+            ) : (
+              <AlertCircle className="w-5 h-5 text-rose-600 mt-0.5 shrink-0" />
+            )}
+            <p className="text-sm font-medium">{feedback.message}</p>
+          </div>
+          <button
+            onClick={() => setFeedback(null)}
+            className="text-rakta-muted hover:text-rakta-navy p-1 transition-colors"
+            title="Tutup pemberitahuan"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
+      {/* Bilah Alat & Filter (Toolbar) */}
+      <div className="bg-rakta-card border border-rakta-subtle/70 rounded-2xl p-4 md:p-5 rakta-card-shadow flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        {/* Kolom Kiri: Input Pencarian */}
+        <div className="relative flex-1 min-w-55">
+          <Search className="w-4 h-4 text-rakta-muted absolute left-3.5 top-1/2 -translate-y-1/2" />
+          <input
+            type="text"
+            placeholder="Cari nomor PO, nama produk, SKU, atau supplier..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-9 pr-4 py-2 text-sm rounded-xl bg-rakta-card border border-rakta-subtle text-rakta-navy placeholder:text-rakta-muted/60 focus:outline-none focus:border-rakta-primary focus:ring-2 focus:ring-rakta-primary/20 transition-all"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery("")}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-rakta-muted hover:text-rakta-navy"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
+
+        {/* Kolom Kanan: Filter Status Kapsul & Tombol Buat PO */}
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Tab Filter Status */}
+          <div className="inline-flex p-1 bg-rakta-surface border border-rakta-subtle/80 rounded-full overflow-x-auto">
+            <button
+              onClick={() => setStatusFilter("all")}
+              className={`px-3 py-1 text-xs font-semibold rounded-full transition-all ${
+                statusFilter === "all"
+                  ? "bg-rakta-card text-rakta-navy shadow-xs"
+                  : "text-rakta-muted hover:text-rakta-navy"
+              }`}
+            >
+              Semua
+            </button>
+            <button
+              onClick={() => setStatusFilter("pending")}
+              className={`px-3 py-1 text-xs font-semibold rounded-full transition-all ${
+                statusFilter === "pending"
+                  ? "bg-amber-50 text-amber-700 shadow-xs border border-amber-200/60"
+                  : "text-rakta-muted hover:text-rakta-navy"
+              }`}
+            >
+              Menunggu
+            </button>
+            <button
+              onClick={() => setStatusFilter("confirmed")}
+              className={`px-3 py-1 text-xs font-semibold rounded-full transition-all ${
+                statusFilter === "confirmed"
+                  ? "bg-blue-50 text-blue-700 shadow-xs border border-blue-200/60"
+                  : "text-rakta-muted hover:text-rakta-navy"
+              }`}
+            >
+              Dikonfirmasi
+            </button>
+            <button
+              onClick={() => setStatusFilter("in_transit")}
+              className={`px-3 py-1 text-xs font-semibold rounded-full transition-all ${
+                statusFilter === "in_transit"
+                  ? "bg-purple-50 text-purple-700 shadow-xs border border-purple-200/60"
+                  : "text-rakta-muted hover:text-rakta-navy"
+              }`}
+            >
+              Dikirim
+            </button>
+            <button
+              onClick={() => setStatusFilter("received")}
+              className={`px-3 py-1 text-xs font-semibold rounded-full transition-all ${
+                statusFilter === "received"
+                  ? "bg-emerald-50 text-emerald-700 shadow-xs border border-emerald-200/60"
+                  : "text-rakta-muted hover:text-rakta-navy"
+              }`}
+            >
+              Selesai
+            </button>
+            <button
+              onClick={() => setStatusFilter("rejected")}
+              className={`px-3 py-1 text-xs font-semibold rounded-full transition-all ${
+                statusFilter === "rejected"
+                  ? "bg-rose-50 text-rose-700 shadow-xs border border-rose-200/60"
+                  : "text-rakta-muted hover:text-rakta-navy"
+              }`}
+            >
+              Batal
+            </button>
+          </div>
+
+          {/* Tombol Buat Pesanan Restock (Warehouse Manager & Admin) */}
+          {(userRole === "warehouse_manager" || userRole === "admin") && (
+            <Button
+              onClick={() => setModalMode("create")}
+              className="rounded-full bg-rakta-primary hover:bg-rakta-navy text-white text-xs font-semibold px-4 py-2 flex items-center gap-1.5 shadow-xs transition-all"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Buat Pesanan Restock</span>
+            </Button>
+          )}
+        </div>
+      </div>
+
+      {/* Tabel Daftar Pesanan Restock */}
+      <div className="bg-rakta-card border border-rakta-subtle/70 rounded-2xl rakta-card-shadow overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm border-collapse">
+            <thead>
+              <tr className="border-b border-rakta-subtle/60 bg-rakta-surface/70 text-xs font-semibold text-rakta-muted uppercase tracking-wider">
+                <th className="px-5 py-3.5">Nomor PO &amp; Tanggal</th>
+                <th className="px-5 py-3.5">Mitra Supplier</th>
+                <th className="px-5 py-3.5">Barang &amp; Kuantitas</th>
+                <th className="px-5 py-3.5">Status &amp; Keterangan</th>
+                <th className="px-5 py-3.5 text-right">Aksi</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-rakta-subtle/40">
+              {filteredOrders.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="px-5 py-12 text-center text-rakta-muted">
+                    <Truck className="w-10 h-10 mx-auto mb-2 text-rakta-muted/50" />
+                    <p className="font-semibold text-rakta-navy text-base">
+                      Tidak ada pesanan restock ditemukan
+                    </p>
+                    <p className="text-xs text-rakta-muted mt-1 max-w-sm mx-auto">
+                      Coba sesuaikan kata kunci pencarian atau filter status di atas.
+                    </p>
+                  </td>
+                </tr>
+              ) : (
+                filteredOrders.map((order) => {
+                  const badge = getStatusBadge(order.status);
+                  const BadgeIcon = badge.icon;
+                  const isProcessing = isPendingAction && activeActionId === order.id;
+
+                  return (
+                    <tr
+                      key={order.id}
+                      className="hover:bg-rakta-surface/40 transition-colors group text-rakta-navy"
+                    >
+                      {/* Nomor PO & Tanggal */}
+                      <td className="px-5 py-4">
+                        <div className="space-y-1">
+                          <span className="font-mono text-xs font-bold px-2 py-0.5 rounded-md bg-rakta-subtle/40 text-rakta-navy border border-rakta-subtle/70">
+                            {order.nomor_po}
+                          </span>
+                          <div className="text-xs text-rakta-muted flex items-center gap-1">
+                            <Calendar className="w-3 h-3 text-rakta-primary shrink-0" />
+                            <span>{formatTanggal(order.tanggal_order)}</span>
+                          </div>
+                          {order.estimasi_tiba && (
+                            <p className="text-[11px] text-rakta-muted">
+                              Est. Tiba: {formatTanggal(order.estimasi_tiba)}
+                            </p>
+                          )}
+                        </div>
+                      </td>
+
+                      {/* Mitra Supplier */}
+                      <td className="px-5 py-4">
+                        <div className="space-y-0.5">
+                          <div className="flex items-center gap-1.5 text-xs font-semibold text-rakta-navy">
+                            <Building2 className="w-3.5 h-3.5 text-rakta-primary shrink-0" />
+                            <span>{order.supplier_perusahaan || order.supplier_nama}</span>
+                          </div>
+                          {order.supplier_perusahaan && (
+                            <p className="text-[11px] text-rakta-muted">PIC: {order.supplier_nama}</p>
+                          )}
+                        </div>
+                      </td>
+
+                      {/* Barang & Kuantitas */}
+                      <td className="px-5 py-4">
+                        <div className="space-y-1">
+                          {order.items?.map((it, idx) => (
+                            <div key={idx} className="flex items-center gap-2 text-xs">
+                              <span className="font-semibold text-rakta-navy">
+                                {it.product_nama}
+                              </span>
+                              <span className="font-bold px-2 py-0.5 rounded-full bg-rakta-surface border border-rakta-subtle text-rakta-primary text-[11px]">
+                                {it.qty} {it.unit}
+                              </span>
+                            </div>
+                          ))}
+                          {order.catatan && (
+                            <p className="text-[11px] text-rakta-muted italic line-clamp-1">
+                              &ldquo;{order.catatan}&rdquo;
+                            </p>
+                          )}
+                        </div>
+                      </td>
+
+                      {/* Status & Keterangan */}
+                      <td className="px-5 py-4">
+                        <div className="space-y-1">
+                          <span
+                            className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-0.5 rounded-full border ${badge.classes}`}
+                          >
+                            <BadgeIcon className="w-3 h-3 shrink-0" />
+                            <span>{badge.label}</span>
+                          </span>
+                          {order.nomor_resi && (
+                            <div className="text-[11px] font-mono text-rakta-navy">
+                              Resi: <span className="font-semibold">{order.nomor_resi}</span>
+                            </div>
+                          )}
+                          {order.catatan_status && (
+                            <p className="text-[11px] text-rakta-muted max-w-xs line-clamp-2">
+                              {order.catatan_status}
+                            </p>
+                          )}
+                        </div>
+                      </td>
+
+                      {/* Aksi Berdasarkan Peran */}
+                      <td className="px-5 py-4 text-right">
+                        {/* Aksi Khusus Supplier */}
+                        {userRole === "supplier" && (
+                          <div className="flex items-center justify-end gap-1.5">
+                            {order.status === "pending" && (
+                              <>
+                                <button
+                                  onClick={() => handleConfirmOrder(order)}
+                                  disabled={isProcessing}
+                                  className="px-3 py-1.5 text-xs font-semibold rounded-full bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1 shadow-2xs transition-colors disabled:opacity-50"
+                                >
+                                  {isProcessing ? (
+                                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                  ) : (
+                                    <CheckCircle2 className="w-3.5 h-3.5" />
+                                  )}
+                                  <span>Konfirmasi</span>
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    setSelectedOrder(order);
+                                    setModalMode("reject");
+                                  }}
+                                  disabled={isProcessing}
+                                  className="px-3 py-1.5 text-xs font-semibold rounded-full bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 flex items-center gap-1 transition-colors"
+                                >
+                                  <XCircle className="w-3.5 h-3.5" />
+                                  <span>Tolak</span>
+                                </button>
+                              </>
+                            )}
+
+                            {order.status === "confirmed" && (
+                              <button
+                                onClick={() => {
+                                  setSelectedOrder(order);
+                                  setModalMode("ship");
+                                }}
+                                className="px-3.5 py-1.5 text-xs font-semibold rounded-full bg-rakta-primary hover:bg-rakta-navy text-white flex items-center gap-1.5 shadow-2xs transition-colors"
+                              >
+                                <Truck className="w-3.5 h-3.5" />
+                                <span>Proses &amp; Kirim</span>
+                              </button>
+                            )}
+
+                            {(order.status === "in_transit" ||
+                              order.status === "received" ||
+                              order.status === "rejected") && (
+                              <span className="text-xs text-rakta-muted font-medium bg-rakta-surface px-2.5 py-1 rounded-full border border-rakta-subtle/60">
+                                Selesai
+                              </span>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Aksi Khusus Warehouse Manager */}
+                        {(userRole === "warehouse_manager" || userRole === "admin") && (
+                          <div className="flex items-center justify-end gap-2">
+                            {order.status === "pending" ? (
+                              <button
+                                onClick={() => handleCancelOrder(order)}
+                                disabled={isProcessing}
+                                className="px-3 py-1 text-xs font-medium text-rose-600 hover:text-rose-800 hover:bg-rose-50 rounded-full border border-rose-200 transition-colors disabled:opacity-50"
+                              >
+                                {isProcessing ? "Membatalkan..." : "Batalkan Pesanan"}
+                              </button>
+                            ) : (
+                              <span className="text-xs text-rakta-muted font-medium bg-rakta-surface px-2.5 py-1 rounded-full border border-rakta-subtle/60">
+                                Mode Pantau
+                              </span>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Aksi Khusus Staff Gudang */}
+                        {userRole === "staff_gudang" && (
+                          <div className="text-right">
+                            {order.status === "in_transit" ? (
+                              <span className="text-xs font-semibold text-purple-700 bg-purple-50 px-2.5 py-1 rounded-full border border-purple-200">
+                                Menunggu di Menu Transaksi
+                              </span>
+                            ) : (
+                              <span className="text-xs text-rakta-muted font-medium bg-rakta-surface px-2.5 py-1 rounded-full border border-rakta-subtle/60">
+                                Mode Pantau
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* ========================================================================= */}
+      {/* MODAL: Buat Pesanan Restock Baru (Warehouse Manager)                       */}
+      {/* ========================================================================= */}
+      {modalMode === "create" && (
+        <div className="fixed inset-0 z-50 bg-rakta-navy/40 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-rakta-card border border-rakta-subtle/80 rounded-2xl w-full max-w-lg p-6 rakta-card-shadow relative my-8 animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between pb-4 border-b border-rakta-subtle/60">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-full bg-rakta-surface border border-rakta-subtle flex items-center justify-center text-rakta-primary">
+                  <Truck className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-rakta-navy">
+                    Buat Pengajuan Restock (PO)
+                  </h3>
+                  <p className="text-xs text-rakta-muted">
+                    Kirim Purchase Order resmi ke mitra supplier terdaftar
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setModalMode(null)}
+                className="text-rakta-muted hover:text-rakta-navy p-1.5 rounded-full hover:bg-rakta-surface transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {createState?.error && (
+              <div className="mt-4 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span>{createState.error}</span>
+              </div>
+            )}
+
+            <form action={createAction} className="mt-5 space-y-4">
+              {/* Pilih Supplier */}
+              <div>
+                <label className="block text-xs font-semibold text-rakta-navy mb-1">
+                  Mitra Supplier Rekanan <span className="text-rose-500">*</span>
+                </label>
+                <select
+                  name="supplier_id"
+                  required
+                  className="w-full px-3 py-2 text-sm rounded-xl bg-rakta-card border border-rakta-subtle text-rakta-navy focus:outline-none focus:border-rakta-primary focus:ring-2 focus:ring-rakta-primary/20"
+                >
+                  <option value="">Pilih Mitra Supplier</option>
+                  {suppliers.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.nama_perusahaan ? `${s.nama_perusahaan} (${s.nama})` : s.nama}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Pilih Produk & Jumlah */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="sm:col-span-2">
+                  <label className="block text-xs font-semibold text-rakta-navy mb-1">
+                    Produk yang Dipesan <span className="text-rose-500">*</span>
+                  </label>
+                  <select
+                    name="product_id"
+                    required
+                    className="w-full px-3 py-2 text-sm rounded-xl bg-rakta-card border border-rakta-subtle text-rakta-navy focus:outline-none focus:border-rakta-primary focus:ring-2 focus:ring-rakta-primary/20"
+                  >
+                    <option value="">Pilih Produk</option>
+                    {products.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        [{p.sku}] {p.nama} (Stok: {p.jumlah_stok} {p.unit})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-rakta-navy mb-1">
+                    Jumlah (Qty) <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    name="qty"
+                    min="1"
+                    required
+                    placeholder="10"
+                    className="w-full px-3 py-2 text-sm rounded-xl bg-rakta-card border border-rakta-subtle text-rakta-navy focus:outline-none focus:border-rakta-primary focus:ring-2 focus:ring-rakta-primary/20"
+                  />
+                </div>
+              </div>
+
+              {/* Estimasi Tiba */}
+              <div>
+                <label className="block text-xs font-semibold text-rakta-navy mb-1">
+                  Estimasi Tanggal Tiba di Gudang
+                </label>
+                <input
+                  type="date"
+                  name="estimasi_tiba"
+                  className="w-full px-3 py-2 text-sm rounded-xl bg-rakta-card border border-rakta-subtle text-rakta-navy focus:outline-none focus:border-rakta-primary focus:ring-2 focus:ring-rakta-primary/20"
+                />
+              </div>
+
+              {/* Catatan PO */}
+              <div>
+                <label className="block text-xs font-semibold text-rakta-navy mb-1">
+                  Instruksi / Catatan Tambahan (Opsional)
+                </label>
+                <textarea
+                  name="catatan"
+                  rows={2}
+                  placeholder="Contoh: Harap kemas dengan bubble wrap tebal dan sertakan packing slip..."
+                  className="w-full px-3 py-2 text-sm rounded-xl bg-rakta-card border border-rakta-subtle text-rakta-navy placeholder:text-rakta-muted/60 focus:outline-none focus:border-rakta-primary focus:ring-2 focus:ring-rakta-primary/20 resize-none"
+                />
+              </div>
+
+              {/* Tombol Aksi */}
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-rakta-subtle/60">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setModalMode(null)}
+                  className="rounded-full text-xs font-semibold px-4 py-2"
+                >
+                  Batal
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={isCreating}
+                  className="rounded-full bg-rakta-primary hover:bg-rakta-navy text-white text-xs font-semibold px-5 py-2 flex items-center gap-1.5 shadow-xs"
+                >
+                  {isCreating && <Loader2 className="w-4 h-4 animate-spin" />}
+                  <span>{isCreating ? "Mengajukan PO..." : "Kirim Pengajuan PO"}</span>
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* MODAL: Tolak Pesanan (Supplier)                                           */}
+      {/* ========================================================================= */}
+      {modalMode === "reject" && selectedOrder && (
+        <div className="fixed inset-0 z-50 bg-rakta-navy/40 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-rakta-card border border-rakta-subtle/80 rounded-2xl w-full max-w-md p-6 rakta-card-shadow relative my-8 animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between pb-3 border-b border-rakta-subtle/60">
+              <h3 className="text-base font-bold text-rose-700 flex items-center gap-2">
+                <ShieldAlert className="w-5 h-5 text-rose-600" />
+                Tolak Pesanan Restock
+              </h3>
+              <button
+                onClick={() => {
+                  setModalMode(null);
+                  setSelectedOrder(null);
+                }}
+                className="text-rakta-muted hover:text-rakta-navy p-1 rounded-full hover:bg-rakta-surface transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {rejectState?.error && (
+              <div className="mt-3 p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs">
+                {rejectState.error}
+              </div>
+            )}
+
+            <p className="text-xs text-rakta-muted mt-3">
+              Anda akan menolak pesanan <span className="font-bold text-rakta-navy">{selectedOrder.nomor_po}</span>. Berikan alasan penolakan agar tim gudang dapat mengetahui kendalanya.
+            </p>
+
+            <form action={rejectAction} className="mt-4 space-y-4">
+              <input type="hidden" name="order_id" value={selectedOrder.id} />
+
+              <div>
+                <label className="block text-xs font-semibold text-rakta-navy mb-1">
+                  Alasan Penolakan <span className="text-rose-500">*</span>
+                </label>
+                <textarea
+                  name="alasan"
+                  rows={3}
+                  required
+                  placeholder="Contoh: Stok bahan baku sedang kosong di pabrik / Kapasitas produksi penuh hingga akhir bulan..."
+                  className="w-full px-3 py-2 text-sm rounded-xl bg-rakta-card border border-rakta-subtle text-rakta-navy placeholder:text-rakta-muted/60 focus:outline-none focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20 resize-none"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-rakta-subtle/60">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setModalMode(null);
+                    setSelectedOrder(null);
+                  }}
+                  className="rounded-full text-xs font-semibold px-4 py-2"
+                >
+                  Batal
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={isRejecting}
+                  className="rounded-full bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold px-5 py-2 flex items-center gap-1.5 shadow-xs"
+                >
+                  {isRejecting && <Loader2 className="w-4 h-4 animate-spin" />}
+                  <span>{isRejecting ? "Memproses..." : "Konfirmasi Penolakan"}</span>
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* MODAL: Proses & Kirim Barang (Supplier)                                   */}
+      {/* ========================================================================= */}
+      {modalMode === "ship" && selectedOrder && (
+        <div className="fixed inset-0 z-50 bg-rakta-navy/40 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-rakta-card border border-rakta-subtle/80 rounded-2xl w-full max-w-md p-6 rakta-card-shadow relative my-8 animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between pb-3 border-b border-rakta-subtle/60">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-full bg-purple-50 text-purple-700 flex items-center justify-center">
+                  <Truck className="w-4 h-4" />
+                </div>
+                <h3 className="text-base font-bold text-rakta-navy">
+                  Proses Pengiriman Barang
+                </h3>
+              </div>
+              <button
+                onClick={() => {
+                  setModalMode(null);
+                  setSelectedOrder(null);
+                }}
+                className="text-rakta-muted hover:text-rakta-navy p-1 rounded-full hover:bg-rakta-surface transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {shipState?.error && (
+              <div className="mt-3 p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs">
+                {shipState.error}
+              </div>
+            )}
+
+            <p className="text-xs text-rakta-muted mt-3">
+              Pesanan <span className="font-bold text-rakta-navy">{selectedOrder.nomor_po}</span> akan ditandai dalam perjalanan (In Transit). Masukkan nomor resi atau ekspedisi pengiriman.
+            </p>
+
+            <form action={shipAction} className="mt-4 space-y-4">
+              <input type="hidden" name="order_id" value={selectedOrder.id} />
+
+              <div>
+                <label className="block text-xs font-semibold text-rakta-navy mb-1">
+                  Nomor Resi / Surat Jalan Ekspedisi
+                </label>
+                <input
+                  type="text"
+                  name="nomor_resi"
+                  placeholder="Contoh: JNE-TRK-9900123 / SJ-2026-08"
+                  className="w-full px-3 py-2 text-sm rounded-xl bg-rakta-card border border-rakta-subtle text-rakta-navy placeholder:text-rakta-muted/60 focus:outline-none focus:border-rakta-primary focus:ring-2 focus:ring-rakta-primary/20"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-rakta-navy mb-1">
+                  Catatan Pengiriman / Nama Kurir
+                </label>
+                <input
+                  type="text"
+                  name="catatan_pengiriman"
+                  placeholder="Contoh: Dikirim via Truk Engkel Box (Supir: Bpk. Joko)"
+                  className="w-full px-3 py-2 text-sm rounded-xl bg-rakta-card border border-rakta-subtle text-rakta-navy placeholder:text-rakta-muted/60 focus:outline-none focus:border-rakta-primary focus:ring-2 focus:ring-rakta-primary/20"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-rakta-subtle/60">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setModalMode(null);
+                    setSelectedOrder(null);
+                  }}
+                  className="rounded-full text-xs font-semibold px-4 py-2"
+                >
+                  Batal
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={isShipping}
+                  className="rounded-full bg-rakta-primary hover:bg-rakta-navy text-white text-xs font-semibold px-5 py-2 flex items-center gap-1.5 shadow-xs"
+                >
+                  {isShipping && <Loader2 className="w-4 h-4 animate-spin" />}
+                  <span>{isShipping ? "Memproses..." : "Tandai Dikirim"}</span>
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
