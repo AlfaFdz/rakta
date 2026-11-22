@@ -16,7 +16,7 @@ export default async function DashboardLayout({ children }) {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-b from-rakta-bg to-rakta-surface text-rakta-navy">
+    <div className="min-h-screen flex flex-col bg-linear-to-b from-rakta-bg to-rakta-surface text-rakta-navy">
       <Navbar session={session} />
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
         {children}

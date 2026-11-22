@@ -52,6 +52,7 @@ CREATE TABLE products (
     sku VARCHAR(80) UNIQUE NOT NULL,
     nama VARCHAR(200) NOT NULL,
     category_id INT NOT NULL REFERENCES categories(id) ON DELETE RESTRICT,
+    supplier_id INT REFERENCES users(id) ON DELETE SET NULL,
     deskripsi TEXT,
     harga_beli NUMERIC(15, 2) NOT NULL DEFAULT 0,
     harga_jual NUMERIC(15, 2) NOT NULL DEFAULT 0,
@@ -130,6 +131,7 @@ CREATE TABLE transaction_items (
 -- 9. INDEKS OPTIMASI PENCARIAN
 -- -----------------------------------------------------------------------------
 CREATE INDEX idx_products_category ON products(category_id);
+CREATE INDEX idx_products_supplier ON products(supplier_id);
 CREATE INDEX idx_products_sku ON products(sku);
 CREATE INDEX idx_transactions_tipe ON transactions(tipe);
 CREATE INDEX idx_transactions_status ON transactions(status);
