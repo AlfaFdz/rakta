@@ -8,10 +8,12 @@ import {
   rejectRestockOrderAction,
   shipRestockOrderAction,
   markRestockReceivedAction,
+  rateSupplierOrderAction,
 } from "@/app/actions/restock";
 import Button from "@/components/ui/Button";
 import ConfirmModal from "@/components/ConfirmModal";
 import { formatTanggal } from "@/lib/format";
+import { exportToCsv } from "@/lib/exportCsv";
 import {
   Truck,
   Plus,
@@ -28,6 +30,8 @@ import {
   Loader2,
   Info,
   ShieldAlert,
+  Star,
+  Download,
 } from "lucide-react";
 
 export default function RestockManager({
@@ -97,6 +101,43 @@ export default function RestockManager({
     }
     return res;
   }, null);
+
+  // State untuk Penilaian / Rating Supplier (Warehouse Manager & Admin)
+  const [ratingOrder, setRatingOrder] = useState(null);
+  const [ratingScore, setRatingScore] = useState(5);
+  const [ratingHover, setRatingHover] = useState(0);
+
+  // Action state untuk Penilaian Supplier
+  const [rateState, rateAction, isRating] = useActionState(async (prev, formData) => {
+    const res = await rateSupplierOrderAction(prev, formData);
+    if (res?.success) {
+      setRatingOrder(null);
+      setFeedback({ type: "success", message: res.message });
+      return null;
+    }
+    return res;
+  }, null);
+
+  // Handler Ekspor CSV Laporan Pesanan Restock
+  const handleExportCsv = () => {
+    const columns = [
+      { label: "Nomor PO", key: "nomor_po" },
+      { label: "Tanggal Order", key: (o) => formatTanggal(o.tanggal_order) },
+      { label: "Estimasi Tiba", key: (o) => (o.estimasi_tiba ? formatTanggal(o.estimasi_tiba) : "-") },
+      { label: "Mitra Supplier", key: (o) => o.supplier_perusahaan || o.supplier_nama },
+      { label: "Kontak PIC", key: (o) => o.supplier_nama },
+      {
+        label: "Rincian Barang",
+        key: (o) => o.items?.map((it) => `${it.product_nama} (${it.qty} ${it.unit})`).join("; ") || "-",
+      },
+      { label: "Status Pengiriman", key: (o) => o.status },
+      { label: "Nomor Resi", key: (o) => o.nomor_resi || "-" },
+      { label: "Skor Rating", key: (o) => (o.rating ? `${o.rating} Bintang` : "Belum Dinilai") },
+      { label: "Catatan Evaluasi", key: (o) => o.review_note || "-" },
+      { label: "Dibuat Oleh", key: "dibuat_oleh_nama" },
+    ];
+    exportToCsv("laporan-restock-rakta.csv", columns, filteredOrders);
+  };
 
   // Handler Konfirmasi PO (Supplier)
   const handleConfirmOrder = (order) => {
@@ -304,6 +345,16 @@ export default function RestockManager({
             </button>
           </div>
 
+          {/* Tombol Ekspor CSV */}
+          <Button
+            onClick={handleExportCsv}
+            variant="outline"
+            className="rounded-full bg-rakta-card border border-rakta-subtle text-rakta-navy hover:bg-rakta-surface text-xs font-semibold px-4 py-2 flex items-center gap-1.5 shadow-none transition-all cursor-pointer"
+          >
+            <Download className="w-4 h-4" />
+            <span>Ekspor CSV</span>
+          </Button>
+
           {/* Tombol Buat Pesanan Restock (Warehouse Manager & Admin) */}
           {(userRole === "warehouse_manager" || userRole === "admin") && (
             <Button
@@ -477,9 +528,20 @@ export default function RestockManager({
                             {(order.status === "in_transit" ||
                               order.status === "received" ||
                               order.status === "rejected") && (
-                              <span className="text-xs text-rakta-muted font-medium bg-rakta-surface px-2.5 py-1 rounded-full border border-rakta-subtle/60">
-                                Selesai
-                              </span>
+                              <div className="flex items-center gap-1.5">
+                                {order.rating && (
+                                  <span
+                                    className="inline-flex items-center gap-1 text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-full"
+                                    title={order.review_note ? `Ulasan: "${order.review_note}"` : "Rating pesanan"}
+                                  >
+                                    <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-500" />
+                                    <span>{order.rating} / 5</span>
+                                  </span>
+                                )}
+                                <span className="text-xs text-rakta-muted font-medium bg-rakta-surface px-2.5 py-1 rounded-full border border-rakta-subtle/60">
+                                  Selesai
+                                </span>
+                              </div>
                             )}
                           </div>
                         )}
@@ -513,9 +575,33 @@ export default function RestockManager({
                             )}
 
                             {order.status === "received" && (
-                              <span className="text-xs text-emerald-700 font-semibold bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
-                                Barang Tiba (Received)
-                              </span>
+                              <div className="flex items-center gap-1.5">
+                                {order.rating ? (
+                                  <div
+                                    className="inline-flex items-center gap-1 text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-full"
+                                    title={order.review_note ? `Ulasan: "${order.review_note}"` : "Rating tersimpan"}
+                                  >
+                                    <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-500" />
+                                    <span>{order.rating} / 5</span>
+                                  </div>
+                                ) : (
+                                  <button
+                                    onClick={() => {
+                                      setRatingOrder(order);
+                                      setRatingScore(5);
+                                      setRatingHover(0);
+                                    }}
+                                    className="px-3 py-1 text-xs font-semibold rounded-full bg-amber-500 hover:bg-amber-600 text-white flex items-center gap-1 shadow-2xs transition-colors cursor-pointer"
+                                    title="Beri Rating Supplier untuk PO ini"
+                                  >
+                                    <Star className="w-3.5 h-3.5 fill-current" />
+                                    <span>Beri Rating</span>
+                                  </button>
+                                )}
+                                <span className="text-xs text-emerald-700 font-semibold bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
+                                  Barang Tiba
+                                </span>
+                              </div>
                             )}
 
                             {(order.status === "confirmed" || order.status === "rejected") && (
@@ -602,6 +688,7 @@ export default function RestockManager({
                   {suppliers.map((s) => (
                     <option key={s.id} value={s.id}>
                       {s.nama_perusahaan ? `${s.nama_perusahaan} (${s.nama})` : s.nama}
+                      {s.avg_rating ? ` - ★ ${s.avg_rating} (${s.total_reviews} ulasan)` : " - Belum ada rating"}
                     </option>
                   ))}
                 </select>
@@ -877,6 +964,147 @@ export default function RestockManager({
         variant={confirmDialog?.type === "cancel" ? "danger" : "primary"}
         isLoading={isPendingAction}
       />
+
+      {/* MODAL: Beri Rating Mitra Supplier */}
+      {ratingOrder && (
+        <div className="fixed inset-0 z-50 bg-rakta-navy/40 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-rakta-card border border-rakta-subtle/80 rounded-2xl w-full max-w-lg p-6 rakta-card-shadow relative my-8 animate-in fade-in zoom-in-95 duration-200">
+            {/* Header Modal */}
+            <div className="flex items-center justify-between pb-4 border-b border-rakta-subtle/60">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-full bg-amber-50 border border-amber-200 text-amber-600 flex items-center justify-center">
+                  <Star className="w-5 h-5 fill-current" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-rakta-navy">
+                    Beri Rating Mitra Supplier
+                  </h3>
+                  <p className="text-xs text-rakta-muted">
+                    Evaluasi performa pengiriman untuk pesanan {ratingOrder.nomor_po}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setRatingOrder(null);
+                  setRatingScore(5);
+                  setRatingHover(0);
+                }}
+                className="text-rakta-muted hover:text-rakta-navy p-1.5 rounded-full hover:bg-rakta-surface transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Error Message */}
+            {rateState?.error && (
+              <div className="mt-4 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span>{rateState.error}</span>
+              </div>
+            )}
+
+            {/* Rincian Supplier */}
+            <div className="mt-4 p-3.5 rounded-xl bg-rakta-surface/70 border border-rakta-subtle/70 text-xs space-y-1">
+              <div className="flex items-center justify-between font-bold text-rakta-navy">
+                <span>{ratingOrder.supplier_perusahaan || ratingOrder.supplier_nama}</span>
+                <span className="font-mono text-[11px] px-2 py-0.5 rounded bg-rakta-card border border-rakta-subtle font-normal">
+                  {ratingOrder.nomor_po}
+                </span>
+              </div>
+              <div className="text-[11px] text-rakta-muted flex items-center gap-2">
+                <span>PIC: {ratingOrder.supplier_nama}</span>
+                <span>•</span>
+                <span>Barang telah tiba di gudang</span>
+              </div>
+            </div>
+
+            <form action={rateAction} className="mt-5 space-y-4">
+              <input type="hidden" name="order_id" value={ratingOrder.id} />
+              <input type="hidden" name="rating" value={ratingScore} />
+
+              {/* Pemilihan Skor Bintang 1-5 */}
+              <div>
+                <label className="block text-xs font-semibold text-rakta-navy mb-2 text-center">
+                  Pilih Skor Penilaian Performa <span className="text-rose-500">*</span>
+                </label>
+                <div className="flex items-center justify-center gap-2 py-2">
+                  {[1, 2, 3, 4, 5].map((star) => {
+                    const isFilled = (ratingHover || ratingScore) >= star;
+                    return (
+                      <button
+                        key={star}
+                        type="button"
+                        onClick={() => setRatingScore(star)}
+                        onMouseEnter={() => setRatingHover(star)}
+                        onMouseLeave={() => setRatingHover(0)}
+                        className="p-1.5 rounded-lg hover:bg-amber-50/60 transition-transform hover:scale-110 cursor-pointer focus:outline-none"
+                        title={`${star} Bintang`}
+                      >
+                        <Star
+                          className={`w-8 h-8 transition-colors ${
+                            isFilled
+                              ? "fill-amber-400 text-amber-500"
+                              : "text-rakta-subtle/80 hover:text-amber-300"
+                          }`}
+                        />
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="text-center text-xs font-semibold text-amber-700 mt-1">
+                  {ratingScore === 5
+                    ? "5 Bintang - Sangat Memuaskan"
+                    : ratingScore === 4
+                    ? "4 Bintang - Pengiriman Baik"
+                    : ratingScore === 3
+                    ? "3 Bintang - Cukup / Sesuai Standar"
+                    : ratingScore === 2
+                    ? "2 Bintang - Perlu Peningkatan"
+                    : "1 Bintang - Sangat Mengecewakan"}
+                </p>
+              </div>
+
+              {/* Catatan Ulasan */}
+              <div>
+                <label className="block text-xs font-semibold text-rakta-navy mb-1">
+                  Catatan Evaluasi / Ulasan Singkat (Opsional)
+                </label>
+                <textarea
+                  name="review_note"
+                  rows={3}
+                  placeholder="Contoh: Pengiriman tepat waktu, kemasan barang rapi dan tersegel dengan baik..."
+                  className="w-full px-3 py-2 text-sm rounded-xl bg-rakta-card border border-rakta-subtle text-rakta-navy placeholder:text-rakta-muted/60 focus:outline-none focus:border-rakta-primary focus:ring-2 focus:ring-rakta-primary/20 resize-none"
+                />
+              </div>
+
+              {/* Tombol Aksi */}
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-rakta-subtle/60">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setRatingOrder(null);
+                    setRatingScore(5);
+                    setRatingHover(0);
+                  }}
+                  className="rounded-full text-xs font-semibold px-4 py-2"
+                >
+                  Batal
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={isRating}
+                  className="rounded-full bg-rakta-primary hover:bg-rakta-navy text-white text-xs font-semibold px-5 py-2 flex items-center gap-1.5 shadow-sm"
+                >
+                  {isRating && <Loader2 className="w-4 h-4 animate-spin" />}
+                  <span>{isRating ? "Menyimpan..." : "Simpan Penilaian"}</span>
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

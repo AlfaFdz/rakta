@@ -7,6 +7,7 @@ import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import ConfirmModal from "@/components/ConfirmModal";
 import { formatRupiah, hitungStatusStok, formatTanggal } from "@/lib/format";
+import { exportToCsv } from "@/lib/exportCsv";
 import {
   Package,
   Plus,
@@ -25,6 +26,7 @@ import {
   Layers,
   Info,
   QrCode,
+  Download,
 } from "lucide-react";
 
 export default function ProductManager({
@@ -150,6 +152,25 @@ export default function ProductManager({
   const newStokNum = physicalStockInput !== "" ? Number(physicalStockInput) : currentStokNum;
   const selisihStok = newStokNum - currentStokNum;
 
+  // Handler Ekspor CSV Katalog Master Produk
+  const handleExportCsv = () => {
+    const columns = [
+      { label: "SKU", key: "sku" },
+      { label: "Nama Produk", key: "nama" },
+      { label: "Kategori", key: "category_nama" },
+      { label: "Supplier Rekanan", key: (p) => p.supplier_perusahaan || p.supplier_nama || "-" },
+      { label: "Stok Fisik", key: "jumlah_stok" },
+      { label: "Satuan Unit", key: "unit" },
+      { label: "Stok Minimum", key: "stok_minimum" },
+      { label: "Stok Low", key: "stok_low" },
+      { label: "Lokasi Rak", key: (p) => p.lokasi_rak || "-" },
+      { label: "Harga Beli", key: "harga_beli" },
+      { label: "Harga Jual", key: "harga_jual" },
+      { label: "Status Ketersediaan", key: (p) => hitungStatusStok(p.jumlah_stok, p.stok_minimum, p.stok_low).label },
+    ];
+    exportToCsv("laporan-master-produk-rakta.csv", columns, filteredProducts);
+  };
+
   return (
     <div className="space-y-6">
       {/* Notifikasi Umpan Balik */}
@@ -256,6 +277,16 @@ export default function ProductManager({
               Menipis / Kritis
             </button>
           </div>
+
+          {/* Tombol Ekspor CSV */}
+          <Button
+            onClick={handleExportCsv}
+            variant="outline"
+            className="rounded-full bg-rakta-card border border-rakta-subtle text-rakta-navy hover:bg-rakta-surface text-xs font-semibold px-4 py-2 flex items-center gap-1.5 shadow-none transition-all cursor-pointer"
+          >
+            <Download className="w-4 h-4" />
+            <span>Ekspor CSV</span>
+          </Button>
 
           {/* Tombol Tambah Produk Baru (Admin & Warehouse Manager) */}
           {(userRole === "admin" || userRole === "warehouse_manager") && (

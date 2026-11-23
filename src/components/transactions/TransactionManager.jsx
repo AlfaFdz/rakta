@@ -13,6 +13,7 @@ import {
 import Button from "@/components/ui/Button";
 import ConfirmModal from "@/components/ConfirmModal";
 import { formatTanggal } from "@/lib/format";
+import { exportToCsv } from "@/lib/exportCsv";
 import {
   ArrowLeftRight,
   ArrowDownLeft,
@@ -35,6 +36,7 @@ import {
   Boxes,
   PackageCheck,
   FileText,
+  Download,
 } from "lucide-react";
 
 export default function TransactionManager({
@@ -204,6 +206,49 @@ export default function TransactionManager({
     });
   };
 
+  // Handler Ekspor CSV Riwayat Transaksi Logistik
+  const handleExportCsv = () => {
+    const columns = [
+      { label: "Nomor Transaksi", key: "nomor_transaksi" },
+      { label: "Tanggal Transaksi", key: (t) => formatTanggal(t.tanggal_transaksi || t.created_at, true) },
+      {
+        label: "Tipe Transaksi",
+        key: (t) =>
+          t.type === "incoming" || t.tipe === "masuk"
+            ? "Barang Masuk"
+            : t.type === "outgoing" || t.tipe === "keluar"
+            ? "Barang Keluar"
+            : "Penyesuaian (Stock Opname)",
+      },
+      {
+        label: "Barang / Produk",
+        key: (t) =>
+          t.items && t.items.length > 0
+            ? t.items.map((it) => it.product_nama).join("; ")
+            : t.single_product_nama || "-",
+      },
+      {
+        label: "SKU",
+        key: (t) =>
+          t.items && t.items.length > 0
+            ? t.items.map((it) => it.product_sku).join("; ")
+            : t.single_product_sku || "-",
+      },
+      {
+        label: "Jumlah Mutasi",
+        key: (t) =>
+          t.items && t.items.length > 0
+            ? t.items.map((it) => `${it.qty} ${it.unit || ""}`).join("; ")
+            : `${t.quantity || 1} ${t.single_unit || ""}`,
+      },
+      { label: "Status Dokumen", key: "status" },
+      { label: "Petugas Pembuat", key: (t) => t.operator_nama || "-" },
+      { label: "Petugas Verifikator", key: (t) => t.approver_nama || "-" },
+      { label: "Catatan / Keterangan", key: (t) => t.catatan || t.notes || "-" },
+    ];
+    exportToCsv("laporan-transaksi-logistik-rakta.csv", columns, filteredTransactions);
+  };
+
   return (
     <div className="space-y-6">
       {/* Notifikasi Umpan Balik */}
@@ -231,6 +276,114 @@ export default function TransactionManager({
           </button>
         </div>
       )}
+
+      {/* BILAH ALAT: Filter & Tombol Aksi Utama */}
+      <div className="bg-rakta-card border border-rakta-subtle/70 rounded-2xl p-4 md:p-5 rakta-card-shadow flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        {/* Kolom Kiri: Search & Filter Tipe */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 flex-1">
+          <div className="relative flex-1 min-w-55">
+            <Search className="w-4 h-4 text-rakta-muted absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              placeholder="Cari nomor transaksi, produk, customer, atau supplier..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-9 pr-4 py-2 text-sm rounded-xl bg-rakta-card border border-rakta-subtle text-rakta-navy placeholder:text-rakta-muted/60 focus:outline-none focus:border-rakta-primary focus:ring-2 focus:ring-rakta-primary/20 transition-all"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-rakta-muted hover:text-rakta-navy"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+
+          {/* Filter Tipe Transaksi */}
+          <div className="inline-flex p-1 bg-rakta-surface border border-rakta-subtle/80 rounded-full shrink-0">
+            <button
+              onClick={() => setTypeFilter("all")}
+              className={`px-3 py-1 text-xs font-semibold rounded-full transition-all ${
+                typeFilter === "all"
+                  ? "bg-rakta-card text-rakta-navy shadow-xs"
+                  : "text-rakta-muted hover:text-rakta-navy"
+              }`}
+            >
+              Semua
+            </button>
+            <button
+              onClick={() => setTypeFilter("incoming")}
+              className={`px-3 py-1 text-xs font-semibold rounded-full transition-all ${
+                typeFilter === "incoming"
+                  ? "bg-emerald-50 text-emerald-700 shadow-xs border border-emerald-200"
+                  : "text-rakta-muted hover:text-rakta-navy"
+              }`}
+            >
+              Masuk
+            </button>
+            <button
+              onClick={() => setTypeFilter("outgoing")}
+              className={`px-3 py-1 text-xs font-semibold rounded-full transition-all ${
+                typeFilter === "outgoing"
+                  ? "bg-rose-50 text-rose-700 shadow-xs border border-rose-200"
+                  : "text-rakta-muted hover:text-rakta-navy"
+              }`}
+            >
+              Keluar
+            </button>
+            <button
+              onClick={() => setTypeFilter("adjustment")}
+              className={`px-3 py-1 text-xs font-semibold rounded-full transition-all ${
+                typeFilter === "adjustment"
+                  ? "bg-sky-50 text-sky-700 shadow-xs border border-sky-200"
+                  : "text-rakta-muted hover:text-rakta-navy"
+              }`}
+            >
+              Penyesuaian
+            </button>
+          </div>
+        </div>
+
+        {/* Kolom Kanan: Filter Status & Tombol Ajukan Barang Keluar */}
+        <div className="flex flex-wrap items-center gap-3">
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="pl-3 pr-8 py-1.5 text-xs rounded-xl bg-rakta-card border border-rakta-subtle text-rakta-navy focus:outline-none focus:border-rakta-primary focus:ring-2 focus:ring-rakta-primary/20 transition-all appearance-none cursor-pointer"
+          >
+            <option value="all">Semua Status</option>
+            <option value="pending">Menunggu Persetujuan</option>
+            <option value="approved">Disetujui / Packing</option>
+            <option value="completed">Selesai (Completed)</option>
+            <option value="rejected">Ditolak</option>
+          </select>
+
+          {/* Tombol Ekspor CSV */}
+          <Button
+            onClick={handleExportCsv}
+            variant="outline"
+            className="rounded-full bg-rakta-card border border-rakta-subtle text-rakta-navy hover:bg-rakta-surface text-xs font-semibold px-4 py-2 flex items-center gap-1.5 shadow-none transition-all cursor-pointer"
+          >
+            <Download className="w-4 h-4" />
+            <span>Ekspor CSV</span>
+          </Button>
+
+          {(userRole === "staff_gudang" || userRole === "admin") && (
+            <Button
+              onClick={() => {
+                setSelectedProductForOut(null);
+                setOutQtyInput("");
+                setModalMode("out");
+              }}
+              className="rounded-full bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold px-4 py-2 flex items-center gap-1.5 shadow-xs transition-all cursor-pointer"
+            >
+              <ArrowUpRight className="w-4 h-4" />
+              <span>Ajukan Barang Keluar</span>
+            </Button>
+          )}
+        </div>
+      </div>
 
       {/* SECTION: Pesanan Restock Tiba di Gudang (Staff Gudang & Admin)             */}
       {(userRole === "staff_gudang" || userRole === "admin") && (
@@ -315,104 +468,6 @@ export default function TransactionManager({
           )}
         </div>
       )}
-
-      {/* BILAH ALAT: Filter & Tombol Ajukan Barang Keluar                           */}
-      <div className="bg-rakta-card border border-rakta-subtle/70 rounded-2xl p-4 md:p-5 rakta-card-shadow flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-        {/* Kolom Kiri: Search & Filter Tipe */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 flex-1">
-          <div className="relative flex-1 min-w-55">
-            <Search className="w-4 h-4 text-rakta-muted absolute left-3.5 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              placeholder="Cari nomor transaksi, produk, customer, atau supplier..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 text-sm rounded-xl bg-rakta-card border border-rakta-subtle text-rakta-navy placeholder:text-rakta-muted/60 focus:outline-none focus:border-rakta-primary focus:ring-2 focus:ring-rakta-primary/20 transition-all"
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery("")}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-rakta-muted hover:text-rakta-navy"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            )}
-          </div>
-
-          {/* Filter Tipe Transaksi */}
-          <div className="inline-flex p-1 bg-rakta-surface border border-rakta-subtle/80 rounded-full shrink-0">
-            <button
-              onClick={() => setTypeFilter("all")}
-              className={`px-3 py-1 text-xs font-semibold rounded-full transition-all ${
-                typeFilter === "all"
-                  ? "bg-rakta-card text-rakta-navy shadow-xs"
-                  : "text-rakta-muted hover:text-rakta-navy"
-              }`}
-            >
-              Semua
-            </button>
-            <button
-              onClick={() => setTypeFilter("incoming")}
-              className={`px-3 py-1 text-xs font-semibold rounded-full transition-all ${
-                typeFilter === "incoming"
-                  ? "bg-emerald-50 text-emerald-700 shadow-xs border border-emerald-200"
-                  : "text-rakta-muted hover:text-rakta-navy"
-              }`}
-            >
-              Masuk
-            </button>
-            <button
-              onClick={() => setTypeFilter("outgoing")}
-              className={`px-3 py-1 text-xs font-semibold rounded-full transition-all ${
-                typeFilter === "outgoing"
-                  ? "bg-rose-50 text-rose-700 shadow-xs border border-rose-200"
-                  : "text-rakta-muted hover:text-rakta-navy"
-              }`}
-            >
-              Keluar
-            </button>
-            <button
-              onClick={() => setTypeFilter("adjustment")}
-              className={`px-3 py-1 text-xs font-semibold rounded-full transition-all ${
-                typeFilter === "adjustment"
-                  ? "bg-sky-50 text-sky-700 shadow-xs border border-sky-200"
-                  : "text-rakta-muted hover:text-rakta-navy"
-              }`}
-            >
-              Penyesuaian
-            </button>
-          </div>
-        </div>
-
-        {/* Kolom Kanan: Filter Status & Tombol Ajukan Barang Keluar */}
-        <div className="flex flex-wrap items-center gap-3">
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="pl-3 pr-8 py-1.5 text-xs rounded-xl bg-rakta-card border border-rakta-subtle text-rakta-navy focus:outline-none focus:border-rakta-primary focus:ring-2 focus:ring-rakta-primary/20 transition-all appearance-none cursor-pointer"
-          >
-            <option value="all">Semua Status</option>
-            <option value="pending">Menunggu Persetujuan</option>
-            <option value="approved">Disetujui / Packing</option>
-            <option value="completed">Selesai (Completed)</option>
-            <option value="rejected">Ditolak</option>
-          </select>
-
-          {(userRole === "staff_gudang" || userRole === "admin") && (
-            <Button
-              onClick={() => {
-                setSelectedProductForOut(null);
-                setOutQtyInput("");
-                setModalMode("out");
-              }}
-              className="rounded-full bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold px-4 py-2 flex items-center gap-1.5 shadow-xs transition-all cursor-pointer"
-            >
-              <ArrowUpRight className="w-4 h-4" />
-              <span>Ajukan Barang Keluar</span>
-            </Button>
-          )}
-        </div>
-      </div>
 
       {/* TABEL: Daftar Transaksi Logistik                                          */}
       <div className="bg-rakta-card border border-rakta-subtle/70 rounded-2xl rakta-card-shadow overflow-hidden">

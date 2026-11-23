@@ -38,6 +38,13 @@ export default async function RestockPage() {
       ro.rejection_reason,
       ro.catatan,
       ro.catatan_status,
+      COALESCE(ro.rating, ro.rating_supplier) AS rating,
+      COALESCE(ro.review_note, ro.ulasan_supplier) AS review_note,
+      EXISTS (
+        SELECT 1 FROM transactions t 
+        WHERE t.restock_order_id = ro.id 
+          AND t.status IN ('approved', 'completed')
+      ) AS incoming_approved,
       u_creator.nama AS dibuat_oleh_nama,
       COALESCE(
         json_agg(
@@ -64,9 +71,19 @@ export default async function RestockPage() {
   const ordersParams = isSupplier ? [session.id] : [];
   const ordersRes = await query(ordersQuery, ordersParams);
 
-  // Ambil data referensi supplier yang sudah disetujui
+  // Ambil data referensi supplier yang sudah disetujui beserta rata-rata rating
   const suppliersRes = await query(
-    "SELECT id, nama, nama_perusahaan FROM users WHERE role = 'supplier' AND status = 'approved' ORDER BY COALESCE(nama_perusahaan, nama) ASC"
+    `SELECT 
+       u.id, 
+       u.nama, 
+       u.nama_perusahaan,
+       ROUND(AVG(COALESCE(ro.rating, ro.rating_supplier))::numeric, 1) AS avg_rating,
+       COUNT(COALESCE(ro.rating, ro.rating_supplier))::int AS total_reviews
+     FROM users u
+     LEFT JOIN restock_orders ro ON u.id = ro.supplier_id AND COALESCE(ro.rating, ro.rating_supplier) IS NOT NULL
+     WHERE u.role = 'supplier' AND u.status = 'approved'
+     GROUP BY u.id
+     ORDER BY COALESCE(u.nama_perusahaan, u.nama) ASC`
   );
 
   // Ambil daftar produk untuk formulir pengajuan PO

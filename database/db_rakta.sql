@@ -85,6 +85,8 @@ CREATE TABLE restock_orders (
     rejection_reason TEXT,
     catatan TEXT,
     catatan_status TEXT,
+    rating INT CHECK (rating BETWEEN 1 AND 5),
+    review_note TEXT,
     rating_supplier INT CHECK (rating_supplier BETWEEN 1 AND 5),
     ulasan_supplier TEXT,
     dibuat_oleh INT NOT NULL REFERENCES users(id) ON DELETE RESTRICT,

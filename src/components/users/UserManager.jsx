@@ -20,6 +20,7 @@ import {
   X,
   AlertCircle,
   Loader2,
+  Star,
 } from "lucide-react";
 
 export default function UserManager({ users = [], currentUserId }) {
@@ -273,9 +274,28 @@ export default function UserManager({ users = [], currentUserId }) {
 
                       <td className="px-5 py-4 text-xs text-rakta-navy">
                         {u.nama_perusahaan ? (
-                          <div className="flex items-center gap-1.5">
-                            <Building2 className="w-3.5 h-3.5 text-rakta-muted shrink-0" />
-                            <span className="font-medium">{u.nama_perusahaan}</span>
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-1.5">
+                              <Building2 className="w-3.5 h-3.5 text-rakta-muted shrink-0" />
+                              <span className="font-medium">{u.nama_perusahaan}</span>
+                            </div>
+                            {u.role === "supplier" && (
+                              <div>
+                                {u.avg_rating ? (
+                                  <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
+                                    <Star className="w-3 h-3 fill-amber-400 text-amber-500" />
+                                    <span>{u.avg_rating}</span>
+                                    <span className="text-[10px] text-rakta-muted font-normal">
+                                      ({u.total_reviews} ulasan)
+                                    </span>
+                                  </span>
+                                ) : (
+                                  <span className="text-[10px] text-rakta-muted italic">
+                                    Belum ada ulasan
+                                  </span>
+                                )}
+                              </div>
+                            )}
                           </div>
                         ) : (
                           <span className="text-rakta-muted italic">Internal RAKTA</span>

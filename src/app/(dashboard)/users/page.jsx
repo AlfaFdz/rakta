@@ -18,18 +18,30 @@ export default async function UsersPage() {
     redirect("/dashboard");
   }
 
-  // Mengambil seluruh akun pengguna di sistem
+  // Mengambil seluruh akun pengguna di sistem beserta rating untuk supplier
   const res = await query(
-    `SELECT id, nama, email, role, status, nama_perusahaan, kontak, created_at
-     FROM users
+    `SELECT 
+       u.id, 
+       u.nama, 
+       u.email, 
+       u.role, 
+       u.status, 
+       u.nama_perusahaan, 
+       u.kontak, 
+       u.created_at,
+       ROUND(AVG(COALESCE(ro.rating, ro.rating_supplier))::numeric, 1) AS avg_rating,
+       COUNT(COALESCE(ro.rating, ro.rating_supplier))::int AS total_reviews
+     FROM users u
+     LEFT JOIN restock_orders ro ON u.id = ro.supplier_id AND COALESCE(ro.rating, ro.rating_supplier) IS NOT NULL
+     GROUP BY u.id
      ORDER BY 
        CASE 
-         WHEN role = 'admin' THEN 1
-         WHEN role = 'warehouse_manager' THEN 2
-         WHEN role = 'staff_gudang' THEN 3
+         WHEN u.role = 'admin' THEN 1
+         WHEN u.role = 'warehouse_manager' THEN 2
+         WHEN u.role = 'staff_gudang' THEN 3
          ELSE 4
        END,
-       nama ASC`
+       u.nama ASC`
   );
 
   const users = res.rows || [];

@@ -326,3 +326,69 @@ export async function markRestockReceivedAction(orderId) {
     return { success: false, error: "Gagal memperbarui status penerimaan barang di gudang." };
   }
 }
+
+// Server Action bagi Warehouse Manager dan Administrator untuk menilai performa supplier
+// Hak akses: warehouse_manager & admin
+export async function rateSupplierOrderAction(prevState, formData) {
+  const session = await getSession();
+
+  if (!session || (session.role !== "warehouse_manager" && session.role !== "admin")) {
+    return {
+      error: "Akses ditolak. Hanya Warehouse Manager dan Administrator yang dapat memberikan penilaian supplier.",
+    };
+  }
+
+  const orderId = parseInt(formData.get("order_id"), 10);
+  const rating = parseInt(formData.get("rating"), 10);
+  const reviewNote = formData.get("review_note")?.toString().trim() || null;
+
+  if (isNaN(orderId)) {
+    return { error: "ID pesanan tidak valid." };
+  }
+
+  if (isNaN(rating) || rating < 1 || rating > 5) {
+    return { error: "Skor penilaian wajib dipilih antara 1 hingga 5 bintang." };
+  }
+
+  try {
+    const orderCheck = await query(
+      `SELECT id, nomor_po, status, rating, rating_supplier 
+       FROM restock_orders 
+       WHERE id = $1`,
+      [orderId]
+    );
+
+    if (orderCheck.rows.length === 0) {
+      return { error: "Pesanan restock tidak ditemukan di dalam sistem." };
+    }
+
+    const order = orderCheck.rows[0];
+
+    if (order.status !== "received") {
+      return { error: "Penilaian hanya dapat diberikan untuk pesanan yang telah tiba di gudang (status: Received)." };
+    }
+
+    if (order.rating !== null || order.rating_supplier !== null) {
+      return { error: "Pesanan ini sudah pernah dinilai. Setiap pesanan hanya dapat dinilai satu kali." };
+    }
+
+    await query(
+      `UPDATE restock_orders 
+       SET rating = $1, rating_supplier = $1, review_note = $2, ulasan_supplier = $2 
+       WHERE id = $3`,
+      [rating, reviewNote, orderId]
+    );
+
+    revalidatePath("/restock");
+    revalidatePath("/users");
+    revalidatePath("/dashboard");
+
+    return {
+      success: true,
+      message: `Penilaian (${rating} bintang) untuk pesanan ${order.nomor_po} berhasil disimpan.`,
+    };
+  } catch (err) {
+    console.error("Kesalahan rateSupplierOrderAction:", err);
+    return { error: "Gagal menyimpan penilaian supplier. Terjadi kesalahan pada server." };
+  }
+}
