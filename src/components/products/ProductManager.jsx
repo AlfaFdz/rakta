@@ -4,6 +4,7 @@ import { useState, useTransition, useActionState, useId } from "react";
 import { createProductAction, updateProductAction, deleteProductAction, adjustStockAction } from "@/app/actions/products";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
+import ConfirmModal from "@/components/ConfirmModal";
 import { formatRupiah, hitungStatusStok, formatTanggal } from "@/lib/format";
 import {
   Package,
@@ -41,6 +42,7 @@ export default function ProductManager({
 
   const [isDeleting, startDeleteTransition] = useTransition();
   const [deletingId, setDeletingId] = useState(null);
+  const [confirmDeleteProd, setConfirmDeleteProd] = useState(null);
 
   // Filter daftar produk
   const filteredProducts = products.filter((p) => {
@@ -107,14 +109,12 @@ export default function ProductManager({
 
   // Handler Hapus Produk
   const handleDeleteProduct = (prod) => {
-    if (
-      !confirm(
-        `Apakah Anda yakin ingin menghapus produk "${prod.nama}" (${prod.sku}) dari sistem?\n\nPerhatian: Produk yang sudah memiliki riwayat transaksi tidak dapat dihapus.`
-      )
-    ) {
-      return;
-    }
+    setConfirmDeleteProd(prod);
+  };
 
+  const handleExecuteDeleteProduct = () => {
+    if (!confirmDeleteProd) return;
+    const prod = confirmDeleteProd;
     setDeletingId(prod.id);
     setFeedback(null);
 
@@ -126,6 +126,7 @@ export default function ProductManager({
         setFeedback({ type: "error", message: res?.error || "Gagal menghapus produk." });
       }
       setDeletingId(null);
+      setConfirmDeleteProd(null);
     });
   };
 
@@ -254,8 +255,8 @@ export default function ProductManager({
             </button>
           </div>
 
-          {/* Tombol Tambah Produk Baru (Khusus Admin) */}
-          {userRole === "admin" && (
+          {/* Tombol Tambah Produk Baru (Admin & Warehouse Manager) */}
+          {(userRole === "admin" || userRole === "warehouse_manager") && (
             <Button
               onClick={() => {
                 setSelectedProduct(null);
@@ -282,7 +283,7 @@ export default function ProductManager({
                 <th className="px-5 py-3.5 text-right">Harga Beli / Jual</th>
                 <th className="px-5 py-3.5 text-center">Tingkat Stok</th>
                 <th className="px-5 py-3.5 text-right">
-                  {userRole === "warehouse_manager" ? "Status" : "Aksi"}
+                  Aksi
                 </th>
               </tr>
             </thead>
@@ -403,7 +404,7 @@ export default function ProductManager({
 
                       {/* Aksi Berdasarkan Peran Pengguna */}
                       <td className="px-5 py-4 text-right">
-                        {userRole === "admin" && (
+                        {(userRole === "admin" || userRole === "warehouse_manager") && (
                           <div className="flex items-center justify-end gap-1.5">
                             {/* Tombol Sesuaikan Stok */}
                             <button
@@ -450,14 +451,6 @@ export default function ProductManager({
                             </Button>
                           </div>
                         )}
-
-                        {userRole === "warehouse_manager" && (
-                          <div className="text-right">
-                            <span className="text-xs text-rakta-muted font-medium bg-rakta-surface px-2.5 py-1 rounded-full border border-rakta-subtle/60">
-                              Mode Pantau
-                            </span>
-                          </div>
-                        )}
                       </td>
                     </tr>
                   );
@@ -468,9 +461,7 @@ export default function ProductManager({
         </div>
       </div>
 
-      {/* ========================================================================= */}
       {/* MODAL: Tambah / Edit Produk (Khusus Admin)                                  */}
-      {/* ========================================================================= */}
       {(modalMode === "add" || modalMode === "edit") && (
         <div className="fixed inset-0 z-50 bg-rakta-navy/40 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
           <div className="bg-rakta-card border border-rakta-subtle/80 rounded-2xl w-full max-w-2xl p-6 rakta-card-shadow relative my-8 animate-in fade-in zoom-in-95 duration-200">
@@ -754,10 +745,8 @@ export default function ProductManager({
         </div>
       )}
 
-      {/* ========================================================================= */}
       {/* MODAL: Sesuaikan Stok (Stock Opname)                                       */}
       {/* Hak Akses: Staff Gudang & Admin                                            */}
-      {/* ========================================================================= */}
       {modalMode === "adjust" && selectedProduct && (
         <div className="fixed inset-0 z-50 bg-rakta-navy/40 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
           <div className="bg-rakta-card border border-rakta-subtle/80 rounded-2xl w-full max-w-lg p-6 rakta-card-shadow relative my-8 animate-in fade-in zoom-in-95 duration-200">
@@ -932,6 +921,17 @@ export default function ProductManager({
           </div>
         </div>
       )}
+      {/* Modal Konfirmasi Hapus Produk */}
+      <ConfirmModal
+        isOpen={Boolean(confirmDeleteProd)}
+        onClose={() => setConfirmDeleteProd(null)}
+        onConfirm={handleExecuteDeleteProduct}
+        title="Hapus Master Produk"
+        message={`Apakah Anda yakin ingin menghapus produk "${confirmDeleteProd?.nama}" (${confirmDeleteProd?.sku}) dari sistem?\n\nPerhatian: Produk yang sudah memiliki riwayat transaksi tidak dapat dihapus.`}
+        confirmText="Hapus Produk"
+        variant="danger"
+        isLoading={isDeleting}
+      />
     </div>
   );
 }

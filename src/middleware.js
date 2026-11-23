@@ -31,6 +31,7 @@ export async function middleware(request) {
     "/transactions",
     "/restock",
     "/suppliers",
+    "/users",
     "/pending",
   ];
   const isPrivateRoute = privateRoutes.some(
@@ -72,8 +73,11 @@ export async function middleware(request) {
   }
 
   // D. Pembatasan akses berbasis Use Case Diagram (RBAC):
-  // 1) /suppliers: Hanya boleh diakses oleh 'admin'
-  if (pathname === "/suppliers" || pathname.startsWith("/suppliers/")) {
+  // 1) /users dan /suppliers: Hanya boleh diakses oleh 'admin'
+  if (
+    pathname === "/users" || pathname.startsWith("/users/") ||
+    pathname === "/suppliers" || pathname.startsWith("/suppliers/")
+  ) {
     if (role !== "admin") {
       return NextResponse.redirect(new URL("/dashboard", request.url));
     }

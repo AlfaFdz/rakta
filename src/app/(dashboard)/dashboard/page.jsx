@@ -4,21 +4,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import StockBadge from "@/components/ui/StockBadge";
 import { formatRupiah, formatTanggal, hitungStatusStok } from "@/lib/format";
 import Link from "next/link";
-import {
-  Package,
-  AlertTriangle,
-  Users,
-  ArrowLeftRight,
-  Truck,
-  DollarSign,
-  Calendar,
-  Clock,
-  CheckCircle,
-  Building2,
-  Boxes,
-  ArrowUpRight,
-  ArrowDownLeft,
-} from "lucide-react";
+import { Package, AlertTriangle, Users, ArrowLeftRight, Truck, DollarSign, Calendar, Clock, CheckCircle, Building2, Boxes, ArrowUpRight, ArrowDownLeft } from "lucide-react";
 
 export default async function DashboardPage() {
   const session = await getSession();
@@ -35,13 +21,13 @@ export default async function DashboardPage() {
         query("SELECT COUNT(*)::int AS total FROM users WHERE role = 'supplier' AND status = 'pending'"),
         query("SELECT COUNT(*)::int AS total FROM transactions"),
         query(`
-          SELECT t.id, t.nomor_transaksi, t.tipe, t.tanggal_transaksi, t.status, t.tujuan_customer,
+          SELECT t.id, t.nomor_transaksi, COALESCE(t.tipe, t.type) AS tipe, COALESCE(t.tanggal_transaksi, t.created_at) AS tanggal_transaksi, t.status, t.tujuan_customer,
                  u.nama AS pembuat_nama, s.nama_perusahaan AS supplier_perusahaan,
                  (SELECT COUNT(*)::int FROM transaction_items ti WHERE ti.transaction_id = t.id) AS total_item
           FROM transactions t
-          LEFT JOIN users u ON t.dibuat_oleh = u.id
+          LEFT JOIN users u ON COALESCE(t.dibuat_oleh, t.created_by) = u.id
           LEFT JOIN users s ON t.supplier_id = s.id
-          ORDER BY t.tanggal_transaksi DESC
+          ORDER BY COALESCE(t.tanggal_transaksi, t.created_at) DESC
           LIMIT 5
         `),
       ]);
@@ -221,10 +207,10 @@ export default async function DashboardPage() {
           LIMIT 5
         `),
         query(`
-          SELECT t.id, t.nomor_transaksi, t.tipe, t.tanggal_transaksi, t.status, u.nama AS pembuat_nama
+          SELECT t.id, t.nomor_transaksi, COALESCE(t.tipe, t.type) AS tipe, COALESCE(t.tanggal_transaksi, t.created_at) AS tanggal_transaksi, t.status, u.nama AS pembuat_nama
           FROM transactions t
-          LEFT JOIN users u ON t.dibuat_oleh = u.id
-          ORDER BY t.tanggal_transaksi DESC
+          LEFT JOIN users u ON COALESCE(t.dibuat_oleh, t.created_by) = u.id
+          ORDER BY COALESCE(t.tanggal_transaksi, t.created_at) DESC
           LIMIT 5
         `),
       ]);
@@ -379,7 +365,7 @@ export default async function DashboardPage() {
       await Promise.all([
         query("SELECT COUNT(*)::int AS total FROM products"),
         query("SELECT COUNT(*)::int AS total FROM products WHERE jumlah_stok <= stok_minimum"),
-        query("SELECT COUNT(*)::int AS total FROM transactions WHERE DATE(tanggal_transaksi) = CURRENT_DATE"),
+        query("SELECT COUNT(*)::int AS total FROM transactions WHERE DATE(COALESCE(tanggal_transaksi, created_at)) = CURRENT_DATE"),
         query("SELECT COUNT(*)::int AS total FROM restock_orders WHERE status = 'in_transit'"),
         query(`
           SELECT r.id, r.nomor_po, r.tanggal_order, r.estimasi_tiba, r.status,

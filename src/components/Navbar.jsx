@@ -28,7 +28,7 @@ export default function Navbar({ session }) {
   const menuConfig = {
     admin: [
       { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-      { label: "Verifikasi Supplier", href: "/suppliers", icon: Users },
+      { label: "Kelola Pengguna", href: "/users", icon: Users },
       { label: "Produk", href: "/products", icon: Package },
       { label: "Kategori", href: "/categories", icon: Layers },
       { label: "Transaksi", href: "/transactions", icon: ArrowLeftRight },

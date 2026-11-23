@@ -5,6 +5,7 @@ import { createCategoryAction, updateCategoryAction, deleteCategoryAction } from
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/Card";
+import ConfirmModal from "@/components/ConfirmModal";
 import { formatTanggal } from "@/lib/format";
 import { Plus, Pencil, Trash2, Layers, Search, Package, AlertCircle, CheckCircle2, X } from "lucide-react";
 
@@ -15,6 +16,7 @@ export default function CategoryManager({ categories = [] }) {
   const [feedback, setFeedback] = useState(null);
   const [isDeleting, startDeleteTransition] = useTransition();
   const [deletingId, setDeletingId] = useState(null);
+  const [confirmDeleteCat, setConfirmDeleteCat] = useState(null);
 
   // Filter pencarian kategori
   const filteredCategories = categories.filter((c) => {
@@ -57,11 +59,12 @@ export default function CategoryManager({ categories = [] }) {
 
   // Handler hapus kategori
   const handleDelete = (cat) => {
-    // Konfirmasi penghapusan
-    if (!confirm(`Apakah Anda yakin ingin menghapus kategori "${cat.nama}"?`)) {
-      return;
-    }
+    setConfirmDeleteCat(cat);
+  };
 
+  const handleExecuteDelete = () => {
+    if (!confirmDeleteCat) return;
+    const cat = confirmDeleteCat;
     setDeletingId(cat.id);
     setFeedback(null);
 
@@ -73,6 +76,7 @@ export default function CategoryManager({ categories = [] }) {
         setFeedback({ type: "error", message: res?.error || "Gagal menghapus kategori." });
       }
       setDeletingId(null);
+      setConfirmDeleteCat(null);
     });
   };
 
@@ -374,6 +378,17 @@ export default function CategoryManager({ categories = [] }) {
           </div>
         </div>
       )}
+      {/* Modal Konfirmasi Hapus Kategori */}
+      <ConfirmModal
+        isOpen={Boolean(confirmDeleteCat)}
+        onClose={() => setConfirmDeleteCat(null)}
+        onConfirm={handleExecuteDelete}
+        title="Hapus Kategori"
+        message={`Apakah Anda yakin ingin menghapus kategori "${confirmDeleteCat?.nama}"?\n\nKategori yang sudah terhubung dengan data master produk tidak dapat dihapus.`}
+        confirmText="Hapus Kategori"
+        variant="danger"
+        isLoading={isDeleting}
+      />
     </div>
   );
 }

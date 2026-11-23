@@ -198,6 +198,7 @@ export async function rejectRestockOrderAction(prevState, formData) {
     const res = await query(
       `UPDATE restock_orders
        SET status = 'rejected',
+           rejection_reason = $1,
            catatan_status = 'Ditolak Supplier: ' || $1
        WHERE id = $2 AND supplier_id = $3 AND status = 'pending'
        RETURNING nomor_po`,
@@ -250,6 +251,7 @@ export async function shipRestockOrderAction(prevState, formData) {
       `UPDATE restock_orders
        SET status = 'in_transit',
            nomor_resi = $1,
+           tracking_number = $1,
            catatan_status = $2
        WHERE id = $3 AND supplier_id = $4 AND status = 'confirmed'
        RETURNING nomor_po`,
@@ -273,5 +275,54 @@ export async function shipRestockOrderAction(prevState, formData) {
   } catch (err) {
     console.error("Kesalahan shipRestockOrderAction:", err);
     return { error: "Gagal memperbarui status pengiriman barang." };
+  }
+}
+
+// Server Action bagi Warehouse Manager untuk menandai barang tiba di gudang (in_transit -> received)
+// Hak akses: warehouse_manager & admin
+// CATATAN PENTING: Status 'received' ini TIDAK mengubah jumlah stok produk.
+export async function markRestockReceivedAction(orderId) {
+  const session = await getSession();
+
+  if (!session || (session.role !== "warehouse_manager" && session.role !== "admin")) {
+    return {
+      success: false,
+      error: "Akses ditolak. Hanya Warehouse Manager dan Administrator yang dapat menandai kedatangan barang.",
+    };
+  }
+
+  const id = parseInt(orderId, 10);
+  if (isNaN(id)) {
+    return { success: false, error: "ID pesanan tidak valid." };
+  }
+
+  try {
+    const res = await query(
+      `UPDATE restock_orders
+       SET status = 'received',
+           catatan_status = 'Barang tiba di gudang dan telah diterima oleh ' || $1
+       WHERE id = $2 AND status = 'in_transit'
+       RETURNING nomor_po`,
+      [session.nama || "Warehouse Manager", id]
+    );
+
+    if (res.rows.length === 0) {
+      return {
+        success: false,
+        error: "Pesanan tidak ditemukan atau belum dalam status pengiriman (in_transit).",
+      };
+    }
+
+    revalidatePath("/restock");
+    revalidatePath("/transactions");
+    revalidatePath("/dashboard");
+
+    return {
+      success: true,
+      message: `Pesanan ${res.rows[0].nomor_po} telah ditandai tiba di gudang (status: Received). Staff Gudang dapat membuat dokumen penerimaan barang masuk pada menu Transaksi.`,
+    };
+  } catch (err) {
+    console.error("Kesalahan markRestockReceivedAction:", err);
+    return { success: false, error: "Gagal memperbarui status penerimaan barang di gudang." };
   }
 }

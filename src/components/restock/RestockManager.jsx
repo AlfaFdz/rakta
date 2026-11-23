@@ -7,8 +7,10 @@ import {
   confirmRestockOrderAction,
   rejectRestockOrderAction,
   shipRestockOrderAction,
+  markRestockReceivedAction,
 } from "@/app/actions/restock";
 import Button from "@/components/ui/Button";
+import ConfirmModal from "@/components/ConfirmModal";
 import { formatTanggal } from "@/lib/format";
 import {
   Truck,
@@ -42,6 +44,7 @@ export default function RestockManager({
   const [feedback, setFeedback] = useState(null);
   const [isPendingAction, startTransition] = useTransition();
   const [activeActionId, setActiveActionId] = useState(null);
+  const [confirmDialog, setConfirmDialog] = useState(null);
 
   // Filter daftar pesanan
   const filteredOrders = orders.filter((o) => {
@@ -97,35 +100,48 @@ export default function RestockManager({
 
   // Handler Konfirmasi PO (Supplier)
   const handleConfirmOrder = (order) => {
-    if (!confirm(`Konfirmasi pesanan ${order.nomor_po}? Pesanan akan masuk ke tahap persiapan barang.`)) {
-      return;
-    }
-    setActiveActionId(order.id);
-    startTransition(async () => {
-      const res = await confirmRestockOrderAction(order.id);
-      if (res?.success) {
-        setFeedback({ type: "success", message: res.message });
-      } else {
-        setFeedback({ type: "error", message: res?.error || "Gagal mengonfirmasi pesanan." });
-      }
-      setActiveActionId(null);
-    });
+    setConfirmDialog({ type: "confirm", order });
   };
 
   // Handler Batalkan PO (Warehouse Manager)
   const handleCancelOrder = (order) => {
-    if (!confirm(`Apakah Anda yakin ingin membatalkan pesanan ${order.nomor_po}?`)) {
-      return;
-    }
+    setConfirmDialog({ type: "cancel", order });
+  };
+
+  // Handler bagi Warehouse Manager untuk menandai barang tiba di gudang
+  const handleMarkReceived = (order) => {
+    setConfirmDialog({ type: "received", order });
+  };
+
+  // Handler eksekusi konfirmasi modal
+  const handleExecuteConfirmDialog = () => {
+    if (!confirmDialog) return;
+    const { type, order } = confirmDialog;
     setActiveActionId(order.id);
+
     startTransition(async () => {
-      const res = await cancelRestockOrderAction(order.id);
+      let res;
+      if (type === "confirm") {
+        res = await confirmRestockOrderAction(order.id);
+      } else if (type === "cancel") {
+        res = await cancelRestockOrderAction(order.id);
+      } else if (type === "received") {
+        res = await markRestockReceivedAction(order.id);
+      }
+
       if (res?.success) {
         setFeedback({ type: "success", message: res.message });
       } else {
-        setFeedback({ type: "error", message: res?.error || "Gagal membatalkan pesanan." });
+        const defaultErr =
+          type === "confirm"
+            ? "Gagal mengonfirmasi pesanan."
+            : type === "cancel"
+            ? "Gagal membatalkan pesanan."
+            : "Gagal memperbarui status pesanan.";
+        setFeedback({ type: "error", message: res?.error || defaultErr });
       }
       setActiveActionId(null);
+      setConfirmDialog(null);
     });
   };
 
@@ -471,17 +487,40 @@ export default function RestockManager({
                         {/* Aksi Khusus Warehouse Manager */}
                         {(userRole === "warehouse_manager" || userRole === "admin") && (
                           <div className="flex items-center justify-end gap-2">
-                            {order.status === "pending" ? (
+                            {order.status === "pending" && (
                               <button
                                 onClick={() => handleCancelOrder(order)}
                                 disabled={isProcessing}
-                                className="px-3 py-1 text-xs font-medium text-rose-600 hover:text-rose-800 hover:bg-rose-50 rounded-full border border-rose-200 transition-colors disabled:opacity-50"
+                                className="px-3 py-1 text-xs font-medium text-rose-600 hover:text-rose-800 hover:bg-rose-50 rounded-full border border-rose-200 transition-colors disabled:opacity-50 cursor-pointer"
                               >
                                 {isProcessing ? "Membatalkan..." : "Batalkan Pesanan"}
                               </button>
-                            ) : (
+                            )}
+
+                            {order.status === "in_transit" && (
+                              <button
+                                onClick={() => handleMarkReceived(order)}
+                                disabled={isProcessing}
+                                className="px-3.5 py-1.5 text-xs font-semibold rounded-full bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 flex items-center gap-1.5 transition-colors disabled:opacity-50 cursor-pointer shadow-2xs"
+                              >
+                                {isProcessing ? (
+                                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                ) : (
+                                  <CheckCircle2 className="w-3.5 h-3.5" />
+                                )}
+                                <span>Tandai Barang Tiba</span>
+                              </button>
+                            )}
+
+                            {order.status === "received" && (
+                              <span className="text-xs text-emerald-700 font-semibold bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
+                                Barang Tiba (Received)
+                              </span>
+                            )}
+
+                            {(order.status === "confirmed" || order.status === "rejected") && (
                               <span className="text-xs text-rakta-muted font-medium bg-rakta-surface px-2.5 py-1 rounded-full border border-rakta-subtle/60">
-                                Mode Pantau
+                                {order.status === "confirmed" ? "Sedang Disiapkan Supplier" : "Dibatalkan"}
                               </span>
                             )}
                           </div>
@@ -490,9 +529,13 @@ export default function RestockManager({
                         {/* Aksi Khusus Staff Gudang */}
                         {userRole === "staff_gudang" && (
                           <div className="text-right">
-                            {order.status === "in_transit" ? (
+                            {order.status === "received" ? (
+                              <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
+                                Siap di Menu Transaksi
+                              </span>
+                            ) : order.status === "in_transit" ? (
                               <span className="text-xs font-semibold text-purple-700 bg-purple-50 px-2.5 py-1 rounded-full border border-purple-200">
-                                Menunggu di Menu Transaksi
+                                Dalam Pengiriman
                               </span>
                             ) : (
                               <span className="text-xs text-rakta-muted font-medium bg-rakta-surface px-2.5 py-1 rounded-full border border-rakta-subtle/60">
@@ -511,9 +554,7 @@ export default function RestockManager({
         </div>
       </div>
 
-      {/* ========================================================================= */}
       {/* MODAL: Buat Pesanan Restock Baru (Warehouse Manager)                       */}
-      {/* ========================================================================= */}
       {modalMode === "create" && (
         <div className="fixed inset-0 z-50 bg-rakta-navy/40 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
           <div className="bg-rakta-card border border-rakta-subtle/80 rounded-2xl w-full max-w-lg p-6 rakta-card-shadow relative my-8 animate-in fade-in zoom-in-95 duration-200">
@@ -649,9 +690,7 @@ export default function RestockManager({
         </div>
       )}
 
-      {/* ========================================================================= */}
       {/* MODAL: Tolak Pesanan (Supplier)                                           */}
-      {/* ========================================================================= */}
       {modalMode === "reject" && selectedOrder && (
         <div className="fixed inset-0 z-50 bg-rakta-navy/40 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
           <div className="bg-rakta-card border border-rakta-subtle/80 rounded-2xl w-full max-w-md p-6 rakta-card-shadow relative my-8 animate-in fade-in zoom-in-95 duration-200">
@@ -723,9 +762,7 @@ export default function RestockManager({
         </div>
       )}
 
-      {/* ========================================================================= */}
       {/* MODAL: Proses & Kirim Barang (Supplier)                                   */}
-      {/* ========================================================================= */}
       {modalMode === "ship" && selectedOrder && (
         <div className="fixed inset-0 z-50 bg-rakta-navy/40 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
           <div className="bg-rakta-card border border-rakta-subtle/80 rounded-2xl w-full max-w-md p-6 rakta-card-shadow relative my-8 animate-in fade-in zoom-in-95 duration-200">
@@ -811,6 +848,35 @@ export default function RestockManager({
           </div>
         </div>
       )}
+      {/* Modal Konfirmasi Tindakan PO */}
+      <ConfirmModal
+        isOpen={Boolean(confirmDialog)}
+        onClose={() => setConfirmDialog(null)}
+        onConfirm={handleExecuteConfirmDialog}
+        title={
+          confirmDialog?.type === "confirm"
+            ? "Konfirmasi Pesanan"
+            : confirmDialog?.type === "cancel"
+            ? "Batalkan Pesanan"
+            : "Konfirmasi Penerimaan Barang"
+        }
+        message={
+          confirmDialog?.type === "confirm"
+            ? `Konfirmasi pesanan ${confirmDialog?.order?.nomor_po}? Pesanan akan masuk ke tahap persiapan barang oleh Supplier.`
+            : confirmDialog?.type === "cancel"
+            ? `Apakah Anda yakin ingin membatalkan pesanan ${confirmDialog?.order?.nomor_po}?`
+            : `Tandai barang pesanan ${confirmDialog?.order?.nomor_po} telah tiba di gudang?\n\nCatatan: Status akan berubah menjadi 'Received'. Jumlah stok produk tidak bertambah sampai Incoming Transaction disetujui di menu Transaksi.`
+        }
+        confirmText={
+          confirmDialog?.type === "confirm"
+            ? "Konfirmasi Pesanan"
+            : confirmDialog?.type === "cancel"
+            ? "Batalkan Pesanan"
+            : "Tandai Diterima"
+        }
+        variant={confirmDialog?.type === "cancel" ? "danger" : "primary"}
+        isLoading={isPendingAction}
+      />
     </div>
   );
 }

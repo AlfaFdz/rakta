@@ -5,12 +5,12 @@ import { getSession } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 
 // Server Action untuk membuat master produk baru
-// Hak akses khusus: admin
+// Hak akses: admin & warehouse_manager
 export async function createProductAction(prevState, formData) {
   const session = await getSession();
 
-  if (!session || session.role !== "admin") {
-    return { error: "Akses ditolak. Hanya Administrator yang dapat menambah produk baru." };
+  if (!session || (session.role !== "admin" && session.role !== "warehouse_manager")) {
+    return { error: "Akses ditolak. Hanya Administrator dan Warehouse Manager yang dapat menambah produk baru." };
   }
 
   const sku = formData.get("sku")?.toString().trim().toUpperCase();
@@ -82,12 +82,12 @@ export async function createProductAction(prevState, formData) {
 }
 
 // Server Action untuk memperbarui informasi master produk
-// Hak akses khusus: admin
+// Hak akses: admin & warehouse_manager
 export async function updateProductAction(prevState, formData) {
   const session = await getSession();
 
-  if (!session || session.role !== "admin") {
-    return { error: "Akses ditolak. Hanya Administrator yang dapat mengubah data produk." };
+  if (!session || (session.role !== "admin" && session.role !== "warehouse_manager")) {
+    return { error: "Akses ditolak. Hanya Administrator dan Warehouse Manager yang dapat mengubah data produk." };
   }
 
   const id = parseInt(formData.get("id"), 10);
@@ -172,12 +172,12 @@ export async function updateProductAction(prevState, formData) {
 }
 
 // Server Action untuk menghapus produk dari katalog dengan proteksi Foreign Key
-// Hak akses khusus: admin
+// Hak akses: admin & warehouse_manager
 export async function deleteProductAction(productId) {
   const session = await getSession();
 
-  if (!session || session.role !== "admin") {
-    return { success: false, error: "Akses ditolak. Hanya Administrator yang dapat menghapus produk." };
+  if (!session || (session.role !== "admin" && session.role !== "warehouse_manager")) {
+    return { success: false, error: "Akses ditolak. Hanya Administrator dan Warehouse Manager yang dapat menghapus produk." };
   }
 
   const id = parseInt(productId, 10);
@@ -297,9 +297,9 @@ export async function adjustStockAction(prevState, formData) {
 
     const trxResult = await client.query(
       `INSERT INTO transactions (
-        nomor_transaksi, tipe, status, catatan, dibuat_oleh, disetujui_oleh
-      ) VALUES ($1, $2, 'approved', $3, $4, $5) RETURNING id`,
-      [nomorTrx, tipe, deskripsiCatatan, session.id, session.id]
+        nomor_transaksi, product_id, tipe, type, quantity, status, catatan, notes, dibuat_oleh, created_by, disetujui_oleh, approved_by
+      ) VALUES ($1, $2, $3, 'adjustment', $4, 'approved', $5, $5, $6, $6, $6, $6) RETURNING id`,
+      [nomorTrx, productId, tipe, qtyMutasi, deskripsiCatatan, session.id]
     );
 
     const transactionId = trxResult.rows[0].id;

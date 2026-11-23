@@ -34,6 +34,8 @@ export default async function RestockPage() {
       ro.estimasi_tiba,
       ro.status,
       ro.nomor_resi,
+      ro.tracking_number,
+      ro.rejection_reason,
       ro.catatan,
       ro.catatan_status,
       u_creator.nama AS dibuat_oleh_nama,
