@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition, useActionState, useId } from "react";
+import Link from "next/link";
 import { createProductAction, updateProductAction, deleteProductAction, adjustStockAction } from "@/app/actions/products";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
@@ -23,6 +24,7 @@ import {
   Loader2,
   Layers,
   Info,
+  QrCode,
 } from "lucide-react";
 
 export default function ProductManager({
@@ -406,6 +408,15 @@ export default function ProductManager({
                       <td className="px-5 py-4 text-right">
                         {(userRole === "admin" || userRole === "warehouse_manager") && (
                           <div className="flex items-center justify-end gap-1.5">
+                            {/* Tombol Detail & QR */}
+                            <Link
+                              href={`/products/${p.id}`}
+                              className="p-1.5 text-rakta-muted hover:text-rakta-navy rounded-lg hover:bg-rakta-surface transition-colors"
+                              title="Detail Produk & QR Code SKU"
+                            >
+                              <QrCode className="w-4 h-4" />
+                            </Link>
+
                             {/* Tombol Sesuaikan Stok */}
                             <button
                               onClick={() => openAdjustModal(p)}
@@ -441,7 +452,14 @@ export default function ProductManager({
                         )}
 
                         {userRole === "staff_gudang" && (
-                          <div className="flex items-center justify-end">
+                          <div className="flex items-center justify-end gap-1.5">
+                            <Link
+                              href={`/products/${p.id}`}
+                              className="p-1.5 text-rakta-muted hover:text-rakta-navy rounded-lg hover:bg-rakta-surface transition-colors"
+                              title="Detail Produk & QR Code SKU"
+                            >
+                              <QrCode className="w-4 h-4" />
+                            </Link>
                             <Button
                               onClick={() => openAdjustModal(p)}
                               className="rounded-full text-xs font-semibold px-3 py-1.5 bg-rakta-surface hover:bg-rakta-primary hover:text-white border border-rakta-subtle text-rakta-navy flex items-center gap-1.5 transition-all shadow-none"
