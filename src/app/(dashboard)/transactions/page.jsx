@@ -1,13 +1,13 @@
 import { query } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { redirect } from "next/navigation";
+import { Card } from "@/components/ui/Card";
 import TransactionManager from "@/components/transactions/TransactionManager";
-import { ArrowLeftRight, ArrowDownLeft, ArrowUpRight, Clock, CheckCircle2 } from "lucide-react";
 
 export const metadata = {
-  title: "Transaksi Mutasi Barang Masuk & Keluar | RAKTA",
+  title: "Transaksi Mutasi Barang Masuk dan Keluar | RAKTA",
   description:
-    "Pencatatan pergerakan logistik barang, alur masuk 2 tahap (penerimaan & persetujuan), dan alur keluar 2 tahap (persetujuan & pengiriman).",
+    "Pencatatan pergerakan logistik barang, alur masuk 2 tahap (penerimaan dan persetujuan), dan alur keluar 2 tahap (persetujuan dan pengiriman).",
 };
 
 export default async function TransactionsPage() {
@@ -133,71 +133,49 @@ export default async function TransactionsPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="bg-rakta-card border border-rakta-subtle/70 rounded-2xl p-6 rakta-card-shadow flex items-center justify-between">
+      <div className="bg-white border border-rakta-border rounded-2xl p-6 rakta-card-shadow flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-xl font-bold text-rakta-navy">
-            Transaksi Mutasi Barang Masuk &amp; Keluar
+          <h1 className="text-xl font-bold text-rakta-navy tracking-tight">
+            Transaksi Mutasi Barang Masuk dan Keluar
           </h1>
           <p className="text-xs text-rakta-muted mt-1">
-            Alur logistik 2 tahap: penerimaan PO &amp; persetujuan masuk, serta pengajuan &amp; eksekusi pengiriman barang keluar.
+            Alur logistik 2 tahap: penerimaan PO dan persetujuan masuk, serta pengajuan dan eksekusi pengiriman barang keluar.
           </p>
         </div>
-        <div className="w-10 h-10 rounded-full bg-rakta-bg flex items-center justify-center text-rakta-primary">
-          <ArrowLeftRight className="w-5 h-5" />
-        </div>
+        <span className="text-xs font-mono font-medium text-rakta-navy bg-rakta-bg/70 border border-rakta-border px-3 py-1.5 rounded-xl self-start sm:self-auto">
+          Mutasi Fisik
+        </span>
       </div>
 
       {/* 4 Kartu Metrik Analitik Transaksi */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Metrik 1: Total Mutasi */}
-        <div className="bg-rakta-card border border-rakta-subtle/70 rounded-2xl p-5 rakta-card-shadow flex items-center justify-between">
-          <div>
-            <p className="text-xs font-semibold text-rakta-muted">Total Transaksi</p>
-            <h3 className="text-2xl font-bold text-rakta-navy mt-1">{totalMutasi}</h3>
-            <p className="text-[11px] text-rakta-muted mt-0.5">
-              {isSupplier ? "Riwayat barang terkirim" : "Log seluruh mutasi inventaris"}
-            </p>
+        <Card className="p-5 flex flex-col justify-between">
+          <span className="text-xs font-medium text-rakta-muted">Total Transaksi</span>
+          <div className="text-2xl font-bold text-rakta-navy font-mono tabular-nums mt-2">
+            {totalMutasi}
           </div>
-          <div className="w-11 h-11 rounded-2xl bg-rakta-surface border border-rakta-subtle flex items-center justify-center text-rakta-primary shrink-0">
-            <ArrowLeftRight className="w-5 h-5" />
-          </div>
-        </div>
+        </Card>
 
-        {/* Metrik 2: Barang Masuk */}
-        <div className="bg-rakta-card border border-rakta-subtle/70 rounded-2xl p-5 rakta-card-shadow flex items-center justify-between">
-          <div>
-            <p className="text-xs font-semibold text-rakta-muted">Barang Masuk</p>
-            <h3 className="text-2xl font-bold text-emerald-600 mt-1">{totalMasuk}</h3>
-            <p className="text-[11px] text-rakta-muted mt-0.5">Penerimaan restock gudang</p>
+        <Card className="p-5 flex flex-col justify-between">
+          <span className="text-xs font-medium text-rakta-muted">Barang Masuk</span>
+          <div className="text-2xl font-bold text-emerald-700 font-mono tabular-nums mt-2">
+            {totalMasuk}
           </div>
-          <div className="w-11 h-11 rounded-2xl bg-emerald-50 border border-emerald-200/80 flex items-center justify-center text-emerald-600 shrink-0">
-            <ArrowDownLeft className="w-5 h-5" />
-          </div>
-        </div>
+        </Card>
 
-        {/* Metrik 3: Barang Keluar */}
-        <div className="bg-rakta-card border border-rakta-subtle/70 rounded-2xl p-5 rakta-card-shadow flex items-center justify-between">
-          <div>
-            <p className="text-xs font-semibold text-rakta-muted">Barang Keluar</p>
-            <h3 className="text-2xl font-bold text-rose-600 mt-1">{totalKeluar}</h3>
-            <p className="text-[11px] text-rakta-muted mt-0.5">Distribusi pengiriman customer</p>
+        <Card className="p-5 flex flex-col justify-between">
+          <span className="text-xs font-medium text-rakta-muted">Barang Keluar</span>
+          <div className="text-2xl font-bold text-rakta-navy font-mono tabular-nums mt-2">
+            {totalKeluar}
           </div>
-          <div className="w-11 h-11 rounded-2xl bg-rose-50 border border-rose-200/80 flex items-center justify-center text-rose-600 shrink-0">
-            <ArrowUpRight className="w-5 h-5" />
-          </div>
-        </div>
+        </Card>
 
-        {/* Metrik 4: Menunggu Persetujuan (Pending) */}
-        <div className="bg-rakta-card border border-rakta-subtle/70 rounded-2xl p-5 rakta-card-shadow flex items-center justify-between">
-          <div>
-            <p className="text-xs font-semibold text-rakta-muted">Menunggu Persetujuan</p>
-            <h3 className="text-2xl font-bold text-amber-600 mt-1">{totalPending}</h3>
-            <p className="text-[11px] text-rakta-muted mt-0.5">Perlu tinjauan Manager</p>
+        <Card className="p-5 flex flex-col justify-between">
+          <span className="text-xs font-medium text-rakta-muted">Menunggu Persetujuan</span>
+          <div className="text-2xl font-bold text-amber-600 font-mono tabular-nums mt-2">
+            {totalPending}
           </div>
-          <div className="w-11 h-11 rounded-2xl bg-amber-50 border border-amber-200/80 flex items-center justify-center text-amber-600 shrink-0">
-            <Clock className="w-5 h-5" />
-          </div>
-        </div>
+        </Card>
       </div>
 
       {/* Komponen Manajer Transaksi Multi-Peran */}

@@ -1,7 +1,7 @@
 export function Card({ children, className = "", ...props }) {
   return (
     <div
-      className={`bg-rakta-card border border-rakta-subtle/70 rounded-2xl rakta-card-shadow p-6 ${className}`}
+      className={`bg-rakta-card border border-rakta-border rounded-2xl p-5 md:p-6 rakta-card-shadow transition-all ${className}`}
       {...props}
     >
       {children}
@@ -11,7 +11,7 @@ export function Card({ children, className = "", ...props }) {
 
 export function CardHeader({ children, className = "", ...props }) {
   return (
-    <div className={`border-b border-rakta-subtle/40 pb-3 mb-4 ${className}`} {...props}>
+    <div className={`space-y-1 mb-4 ${className}`} {...props}>
       {children}
     </div>
   );
@@ -20,7 +20,7 @@ export function CardHeader({ children, className = "", ...props }) {
 export function CardTitle({ children, className = "", ...props }) {
   return (
     <h3
-      className={`text-base font-bold text-rakta-navy tracking-tight ${className}`}
+      className={`text-base font-semibold text-rakta-navy tracking-tight ${className}`}
       {...props}
     >
       {children}
@@ -30,7 +30,7 @@ export function CardTitle({ children, className = "", ...props }) {
 
 export function CardDescription({ children, className = "", ...props }) {
   return (
-    <p className={`text-xs text-rakta-muted mt-1 ${className}`} {...props}>
+    <p className={`text-xs text-rakta-muted mt-0.5 ${className}`} {...props}>
       {children}
     </p>
   );
@@ -38,7 +38,7 @@ export function CardDescription({ children, className = "", ...props }) {
 
 export function CardContent({ children, className = "", ...props }) {
   return (
-    <div className={`space-y-3 ${className}`} {...props}>
+    <div className={`space-y-4 ${className}`} {...props}>
       {children}
     </div>
   );
@@ -47,12 +47,10 @@ export function CardContent({ children, className = "", ...props }) {
 export function CardFooter({ children, className = "", ...props }) {
   return (
     <div
-      className={`border-t border-rakta-subtle/40 pt-3 mt-4 flex items-center justify-end gap-2 ${className}`}
+      className={`flex items-center justify-end gap-2 pt-4 border-t border-rakta-border/60 ${className}`}
       {...props}
     >
       {children}
     </div>
   );
 }
-
-export default Card;

@@ -1,9 +1,14 @@
 @import "tailwindcss";
 
 @theme {
+  --font-sans: var(--font-plus-jakarta), "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: var(--font-jetbrains-mono), monospace;
+
   --color-rakta-bg: #DCEBFA;
   --color-rakta-subtle: #B9D8F5;
+  --color-rakta-border: #D5E6F7;
   --color-rakta-primary: #2583E8;
+  --color-rakta-primary-hover: #1C72D2;
   --color-rakta-navy: #102E50;
   --color-rakta-muted: #55718D;
   --color-rakta-card: #FFFFFF;
@@ -12,12 +17,14 @@
 
 html,
 body {
-  background: linear-gradient(180deg, #DCEBFA 0%, #F2F8FF 100%) !important;
-  color: #102E50;
-  font-family: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: linear-gradient(180deg, #DCEBFA 0%, #F2F8FF 55%, #F8FBFF 100%);
+  background-attachment: fixed;
+  color: var(--color-rakta-navy);
+  font-family: var(--font-sans);
   min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
 }
 
 .rakta-card-shadow {
-  box-shadow: 0 10px 25px -5px rgba(16, 46, 80, 0.06), 0 8px 10px -6px rgba(16, 46, 80, 0.04);
+  box-shadow: 0 4px 20px -2px rgba(16, 46, 80, 0.04);
 }

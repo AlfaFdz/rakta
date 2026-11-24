@@ -3,6 +3,7 @@ import { getSession } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { formatRupiah, formatTanggal, hitungStatusStok } from "@/lib/format";
+import StockBadge from "@/components/ui/StockBadge";
 import ProductQrCard from "@/components/products/ProductQrCard";
 import {
   Package,
@@ -10,16 +11,10 @@ import {
   MapPin,
   Building2,
   Layers,
-  AlertTriangle,
-  CheckCircle2,
   Clock,
   PackageX,
   Mail,
   Phone,
-  ArrowDownLeft,
-  ArrowUpRight,
-  SlidersHorizontal,
-  History,
   Tag,
   Coins,
 } from "lucide-react";
@@ -103,7 +98,6 @@ export default async function ProductDetailPage({ params }) {
   const product = productRes.rows[0];
 
   // 2. Mengambil riwayat mutasi produk (Raw SQL pg)
-  // Mengambil transaksi logistik berstatus 'approved', 'completed', atau 'adjustment'
   const mutationsRes = await query(
     `SELECT 
       t.id,
@@ -135,7 +129,7 @@ export default async function ProductDetailPage({ params }) {
   return (
     <div className="space-y-6">
       {/* Bilah Navigasi Atas & Tombol Kembali */}
-      <div className="bg-rakta-card border border-rakta-subtle/70 rounded-2xl p-5 md:p-6 rakta-card-shadow flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="bg-white border border-rakta-border rounded-2xl p-5 md:p-6 rakta-card-shadow flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 text-xs text-rakta-muted mb-1.5">
             <Link
@@ -150,7 +144,7 @@ export default async function ProductDetailPage({ params }) {
           </div>
           <div className="flex flex-wrap items-center gap-2.5">
             <h1 className="text-xl md:text-2xl font-bold text-rakta-navy">{product.nama}</h1>
-            <span className="font-mono text-xs font-bold px-2.5 py-0.5 rounded-md bg-rakta-surface text-rakta-navy border border-rakta-subtle">
+            <span className="font-mono text-xs font-semibold px-2.5 py-0.5 rounded-md bg-rakta-surface text-rakta-navy border border-rakta-border">
               {product.sku}
             </span>
           </div>
@@ -158,7 +152,7 @@ export default async function ProductDetailPage({ params }) {
 
         <Link
           href="/products"
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-rakta-surface hover:bg-rakta-card border border-rakta-subtle text-rakta-navy text-xs font-semibold shadow-xs transition-all self-start sm:self-auto"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-rakta-surface hover:bg-rakta-bg border border-rakta-border text-rakta-navy text-xs font-semibold shadow-xs transition-all self-start sm:self-auto cursor-pointer"
         >
           <ArrowLeft className="w-3.5 h-3.5" />
           <span>Kembali ke Katalog</span>
@@ -167,62 +161,41 @@ export default async function ProductDetailPage({ params }) {
 
       {/* Grid Informasi Utama: Data Produk & Generator QR */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Kolom Kiri & Tengah: Rincian Produk, Level Stok, dan Supplier (2 Kolom di Desktop) */}
+        {/* Kolom Kiri & Tengah: Rincian Produk, Level Stok, dan Supplier */}
         <div className="lg:col-span-2 space-y-6">
           {/* Kartu Status Ketersediaan & Level Stok */}
-          <div className="bg-rakta-card border border-rakta-subtle/70 rounded-2xl p-6 rakta-card-shadow space-y-5">
-            <div className="flex items-center justify-between pb-3.5 border-b border-rakta-subtle/60">
+          <div className="bg-white border border-rakta-border rounded-2xl p-6 rakta-card-shadow space-y-5">
+            <div className="flex items-center justify-between pb-3.5 border-b border-rakta-border">
               <div className="flex items-center gap-2">
                 <Layers className="w-4 h-4 text-rakta-primary" />
                 <h3 className="text-sm font-bold text-rakta-navy">Status Ketersediaan &amp; Level Stok</h3>
               </div>
-              <span
-                className={`inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full border ${
-                  statusStok.kode === "normal"
-                    ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                    : statusStok.kode === "menipis"
-                    ? "bg-amber-50 text-amber-700 border-amber-200"
-                    : "bg-rose-50 text-rose-700 border-rose-200"
-                }`}
-              >
-                {statusStok.kode === "normal" ? (
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                ) : (
-                  <AlertTriangle className="w-3.5 h-3.5" />
-                )}
-                {statusStok.kode === "normal"
-                  ? "Stok Aman"
-                  : statusStok.kode === "menipis"
-                  ? "Stok Menipis"
-                  : statusStok.kode === "habis"
-                  ? "Stok Habis"
-                  : "Stok Kritis"}
-              </span>
+              <StockBadge status={statusStok} />
             </div>
 
             {/* 3 Metrik Stok Kunci */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div className="p-4 rounded-xl bg-rakta-surface/70 border border-rakta-subtle/70">
+              <div className="p-4 rounded-xl bg-rakta-surface border border-rakta-border">
                 <p className="text-xs text-rakta-muted font-medium">Stok Fisik Saat Ini</p>
-                <div className="text-2xl font-bold text-rakta-navy mt-1">
+                <div className="text-2xl font-bold font-mono tabular-nums text-rakta-navy mt-1">
                   {product.jumlah_stok}{" "}
                   <span className="text-xs font-normal text-rakta-muted">{product.unit}</span>
                 </div>
                 <p className="text-[11px] text-rakta-muted mt-0.5">Tersedia di gudang</p>
               </div>
 
-              <div className="p-4 rounded-xl bg-rakta-surface/70 border border-rakta-subtle/70">
+              <div className="p-4 rounded-xl bg-rakta-surface border border-rakta-border">
                 <p className="text-xs text-rakta-muted font-medium">Batas Stok Minimum</p>
-                <div className="text-2xl font-bold text-rose-600 mt-1">
+                <div className="text-2xl font-bold font-mono tabular-nums text-rose-700 mt-1">
                   {product.stok_minimum}{" "}
                   <span className="text-xs font-normal text-rakta-muted">{product.unit}</span>
                 </div>
                 <p className="text-[11px] text-rakta-muted mt-0.5">Batas status darurat/kritis</p>
               </div>
 
-              <div className="p-4 rounded-xl bg-rakta-surface/70 border border-rakta-subtle/70">
+              <div className="p-4 rounded-xl bg-rakta-surface border border-rakta-border">
                 <p className="text-xs text-rakta-muted font-medium">Ambang Stok Low</p>
-                <div className="text-2xl font-bold text-amber-600 mt-1">
+                <div className="text-2xl font-bold font-mono tabular-nums text-amber-700 mt-1">
                   {product.stok_low}{" "}
                   <span className="text-xs font-normal text-rakta-muted">{product.unit}</span>
                 </div>
@@ -232,8 +205,8 @@ export default async function ProductDetailPage({ params }) {
           </div>
 
           {/* Kartu Informasi Spesifikasi & Penempatan */}
-          <div className="bg-rakta-card border border-rakta-subtle/70 rounded-2xl p-6 rakta-card-shadow space-y-5">
-            <div className="flex items-center gap-2 pb-3.5 border-b border-rakta-subtle/60">
+          <div className="bg-white border border-rakta-border rounded-2xl p-6 rakta-card-shadow space-y-5">
+            <div className="flex items-center gap-2 pb-3.5 border-b border-rakta-border">
               <Tag className="w-4 h-4 text-rakta-primary" />
               <h3 className="text-sm font-bold text-rakta-navy">Rincian Informasi &amp; Spesifikasi</h3>
             </div>
@@ -242,7 +215,7 @@ export default async function ProductDetailPage({ params }) {
               <div className="space-y-1">
                 <p className="text-rakta-muted">Kategori Produk</p>
                 <div className="font-semibold text-rakta-navy text-sm flex items-center gap-1.5">
-                  <span className="px-2.5 py-0.5 rounded-full bg-rakta-surface text-rakta-navy border border-rakta-subtle/70">
+                  <span className="px-2.5 py-0.5 rounded-md bg-rakta-surface text-rakta-navy border border-rakta-border">
                     {product.category_nama}
                   </span>
                 </div>
@@ -262,7 +235,7 @@ export default async function ProductDetailPage({ params }) {
 
               <div className="space-y-1">
                 <p className="text-rakta-muted">Harga Beli Gudang</p>
-                <div className="font-bold text-rakta-navy text-base">
+                <div className="font-bold text-rakta-navy text-base font-mono tabular-nums">
                   {formatRupiah(product.harga_beli)}
                 </div>
                 <p className="text-[11px] text-rakta-muted mt-0.5">Biaya pengadaan per {product.unit}</p>
@@ -270,7 +243,7 @@ export default async function ProductDetailPage({ params }) {
 
               <div className="space-y-1">
                 <p className="text-rakta-muted">Harga Jual Rekomendasi</p>
-                <div className="font-bold text-rakta-navy text-base">
+                <div className="font-bold text-rakta-navy text-base font-mono tabular-nums">
                   {formatRupiah(product.harga_jual)}
                 </div>
                 <p className="text-[11px] text-rakta-muted mt-0.5">Nilai keluar barang per {product.unit}</p>
@@ -279,9 +252,9 @@ export default async function ProductDetailPage({ params }) {
 
             {/* Deskripsi Tambahan */}
             {product.deskripsi && (
-              <div className="pt-3 border-t border-rakta-subtle/50 text-xs">
+              <div className="pt-3 border-t border-rakta-border text-xs">
                 <p className="text-rakta-muted font-medium mb-1">Deskripsi &amp; Instruksi Khusus</p>
-                <p className="text-rakta-navy bg-rakta-surface/50 p-3 rounded-xl border border-rakta-subtle/50 leading-relaxed">
+                <p className="text-rakta-navy bg-rakta-surface p-3 rounded-xl border border-rakta-border leading-relaxed">
                   {product.deskripsi}
                 </p>
               </div>
@@ -289,8 +262,8 @@ export default async function ProductDetailPage({ params }) {
           </div>
 
           {/* Kartu Pemasok Utama (Supplier Rekanan) */}
-          <div className="bg-rakta-card border border-rakta-subtle/70 rounded-2xl p-6 rakta-card-shadow space-y-4">
-            <div className="flex items-center gap-2 pb-3.5 border-b border-rakta-subtle/60">
+          <div className="bg-white border border-rakta-border rounded-2xl p-6 rakta-card-shadow space-y-4">
+            <div className="flex items-center gap-2 pb-3.5 border-b border-rakta-border">
               <Building2 className="w-4 h-4 text-rakta-primary" />
               <h3 className="text-sm font-bold text-rakta-navy">Pemasok Utama (Supplier Rekanan)</h3>
             </div>
@@ -311,7 +284,7 @@ export default async function ProductDetailPage({ params }) {
                   {product.supplier_kontak && (
                     <div className="flex items-center gap-2 text-rakta-navy">
                       <Phone className="w-3.5 h-3.5 text-rakta-muted shrink-0" />
-                      <span>{product.supplier_kontak}</span>
+                      <span className="font-mono tabular-nums">{product.supplier_kontak}</span>
                     </div>
                   )}
                   {product.supplier_email && (
@@ -335,14 +308,14 @@ export default async function ProductDetailPage({ params }) {
           <ProductQrCard product={product} />
 
           {/* Kartu Ringkasan Valuasi Barang */}
-          <div className="bg-rakta-card border border-rakta-subtle/70 rounded-2xl p-5 rakta-card-shadow text-xs space-y-2.5">
+          <div className="bg-white border border-rakta-border rounded-2xl p-5 rakta-card-shadow text-xs space-y-2.5">
             <div className="flex items-center gap-2 text-rakta-navy font-bold">
               <Coins className="w-4 h-4 text-rakta-primary" />
               <span>Estimasi Nilai Stok Fisik</span>
             </div>
-            <div className="p-3 bg-rakta-surface/70 rounded-xl border border-rakta-subtle/70">
+            <div className="p-3 bg-rakta-surface rounded-xl border border-rakta-border">
               <p className="text-rakta-muted text-[11px]">Total Valuasi Berdasarkan Harga Beli:</p>
-              <p className="text-base font-bold text-rakta-navy mt-0.5">
+              <p className="text-base font-bold font-mono tabular-nums text-rakta-navy mt-0.5">
                 {formatRupiah(Number(product.jumlah_stok) * Number(product.harga_beli))}
               </p>
             </div>
@@ -351,21 +324,16 @@ export default async function ProductDetailPage({ params }) {
       </div>
 
       {/* Bagian Bawah: Riwayat Mutasi Produk */}
-      <div className="bg-rakta-card border border-rakta-subtle/70 rounded-2xl rakta-card-shadow overflow-hidden">
-        <div className="p-5 border-b border-rakta-subtle/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-rakta-surface border border-rakta-subtle/80 flex items-center justify-center text-rakta-primary shrink-0">
-              <History className="w-4 h-4" />
-            </div>
-            <div>
-              <h3 className="text-base font-bold text-rakta-navy">Riwayat Mutasi Produk</h3>
-              <p className="text-xs text-rakta-muted">
-                Daftar pergerakan barang masuk, barang keluar, dan penyesuaian stok fisik terverifikasi
-              </p>
-            </div>
+      <div className="bg-white border border-rakta-border rounded-2xl rakta-card-shadow overflow-hidden">
+        <div className="p-5 border-b border-rakta-border flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h3 className="text-base font-bold text-rakta-navy">Riwayat Mutasi Produk</h3>
+            <p className="text-xs text-rakta-muted mt-0.5">
+              Daftar pergerakan barang masuk, barang keluar, dan penyesuaian stok fisik terverifikasi
+            </p>
           </div>
 
-          <span className="text-xs font-semibold px-3 py-1 rounded-full bg-rakta-surface text-rakta-navy border border-rakta-subtle/70 self-start sm:self-auto">
+          <span className="text-xs font-semibold px-3 py-1 rounded-xl bg-rakta-surface text-rakta-navy border border-rakta-border font-mono tabular-nums self-start sm:self-auto">
             {mutations.length} Transaksi Terverifikasi
           </span>
         </div>
@@ -374,20 +342,20 @@ export default async function ProductDetailPage({ params }) {
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm border-collapse">
             <thead>
-              <tr className="border-b border-rakta-subtle/60 bg-rakta-surface/70 text-xs font-semibold text-rakta-muted uppercase tracking-wider">
-                <th className="px-5 py-3.5">Nomor Transaksi</th>
-                <th className="px-5 py-3.5">Jenis Mutasi</th>
-                <th className="px-5 py-3.5 text-center">Jumlah Perubahan</th>
-                <th className="px-5 py-3.5">Petugas Verifikator</th>
-                <th className="px-5 py-3.5">Waktu Transaksi</th>
-                <th className="px-5 py-3.5">Keterangan / Catatan</th>
+              <tr className="border-b border-rakta-border bg-rakta-surface/80 text-xs font-semibold text-rakta-muted">
+                <th className="px-5 py-3.5">Nomor transaksi</th>
+                <th className="px-5 py-3.5">Jenis mutasi</th>
+                <th className="px-5 py-3.5 text-center">Jumlah perubahan</th>
+                <th className="px-5 py-3.5">Petugas verifikator</th>
+                <th className="px-5 py-3.5">Waktu transaksi</th>
+                <th className="px-5 py-3.5">Keterangan / catatan</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-rakta-subtle/40">
+            <tbody className="divide-y divide-rakta-border/40">
               {mutations.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-5 py-12 text-center text-rakta-muted">
-                    <Clock className="w-9 h-9 mx-auto mb-2 text-rakta-muted/50" />
+                    <Clock className="w-9 h-9 mx-auto mb-2 text-rakta-muted/40" />
                     <p className="font-semibold text-rakta-navy text-sm">
                       Belum ada riwayat mutasi untuk produk ini
                     </p>
@@ -400,36 +368,37 @@ export default async function ProductDetailPage({ params }) {
                 mutations.map((m) => {
                   const isMasuk = m.tipe === "masuk" || m.type === "incoming";
                   const isKeluar = m.tipe === "keluar" || m.type === "outgoing";
-                  const isPenyesuaian = m.type === "adjustment" || m.tipe === "penyesuaian";
 
                   return (
                     <tr
                       key={m.id}
-                      className="hover:bg-rakta-surface/40 transition-colors text-rakta-navy text-xs"
+                      className="hover:bg-rakta-surface/50 transition-colors text-rakta-navy text-xs"
                     >
                       {/* Nomor Transaksi */}
-                      <td className="px-5 py-3.5 font-mono font-bold text-rakta-navy">
+                      <td className="px-5 py-3.5 font-mono font-semibold text-rakta-navy">
                         {m.nomor_transaksi}
                       </td>
 
-                      {/* Jenis Mutasi */}
+                      {/* Jenis Mutasi (Zero Arrows: R-08) */}
                       <td className="px-5 py-3.5">
                         <span
-                          className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full font-semibold border ${
+                          className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full font-semibold border ${
                             isMasuk
                               ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                               : isKeluar
                               ? "bg-rose-50 text-rose-700 border-rose-200"
-                              : "bg-blue-50 text-blue-700 border-blue-200"
+                              : "bg-rakta-bg/70 text-rakta-navy border-rakta-border"
                           }`}
                         >
-                          {isMasuk ? (
-                            <ArrowDownLeft className="w-3 h-3 text-emerald-600" />
-                          ) : isKeluar ? (
-                            <ArrowUpRight className="w-3 h-3 text-rose-600" />
-                          ) : (
-                            <SlidersHorizontal className="w-3 h-3 text-blue-600" />
-                          )}
+                          <span
+                            className={`w-1.5 h-1.5 rounded-full ${
+                              isMasuk
+                                ? "bg-emerald-500"
+                                : isKeluar
+                                ? "bg-rose-500"
+                                : "bg-rakta-primary"
+                            }`}
+                          />
                           <span>
                             {isMasuk
                               ? "Barang Masuk"
@@ -441,14 +410,14 @@ export default async function ProductDetailPage({ params }) {
                       </td>
 
                       {/* Jumlah Perubahan */}
-                      <td className="px-5 py-3.5 text-center font-bold">
+                      <td className="px-5 py-3.5 text-center font-bold font-mono tabular-nums">
                         <span
                           className={`text-sm ${
                             isMasuk
                               ? "text-emerald-700"
                               : isKeluar
                               ? "text-rose-700"
-                              : "text-blue-700"
+                              : "text-rakta-primary"
                           }`}
                         >
                           {isMasuk ? `+${m.qty}` : isKeluar ? `-${m.qty}` : `${m.qty}`}
@@ -464,7 +433,7 @@ export default async function ProductDetailPage({ params }) {
                       </td>
 
                       {/* Waktu Transaksi */}
-                      <td className="px-5 py-3.5 text-rakta-muted whitespace-nowrap">
+                      <td className="px-5 py-3.5 text-rakta-muted whitespace-nowrap font-mono tabular-nums">
                         {formatTanggal(m.waktu_mutasi, true)}
                       </td>
 
@@ -484,11 +453,11 @@ export default async function ProductDetailPage({ params }) {
   );
 }
 
-// Tampilan Kosong Ramah Jika ID Produk Tidak Ditemukan
+// Tampilan Kosong Jika ID Produk Tidak Ditemukan
 function EmptyProductView({ pesan }) {
   return (
-    <div className="bg-rakta-card border border-rakta-subtle/70 rounded-2xl p-10 md:p-14 rakta-card-shadow text-center max-w-lg mx-auto my-12">
-      <div className="w-16 h-16 rounded-full bg-rose-50 border border-rose-200 flex items-center justify-center text-rose-500 mx-auto mb-4">
+    <div className="bg-white border border-rakta-border rounded-2xl p-10 md:p-14 rakta-card-shadow text-center max-w-lg mx-auto my-12">
+      <div className="w-16 h-16 rounded-2xl bg-rose-50 border border-rose-200 flex items-center justify-center text-rose-500 mx-auto mb-4">
         <PackageX className="w-8 h-8" />
       </div>
       <h2 className="text-lg md:text-xl font-bold text-rakta-navy">Produk Tidak Ditemukan</h2>
@@ -498,7 +467,7 @@ function EmptyProductView({ pesan }) {
       <div className="mt-6">
         <Link
           href="/products"
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-rakta-primary hover:bg-rakta-navy text-white text-xs md:text-sm font-semibold shadow-sm transition-all"
+          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-rakta-primary hover:bg-rakta-primary-hover text-white text-xs md:text-sm font-semibold shadow-xs transition-all cursor-pointer"
         >
           <ArrowLeft className="w-4 h-4" />
           <span>Kembali ke Katalog Produk</span>

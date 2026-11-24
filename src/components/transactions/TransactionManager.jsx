@@ -18,8 +18,6 @@ import { formatTanggal } from "@/lib/format";
 import { exportToCsv } from "@/lib/exportCsv";
 import {
   ArrowLeftRight,
-  ArrowDownLeft,
-  ArrowUpRight,
   SlidersHorizontal,
   Plus,
   CheckCircle2,
@@ -312,7 +310,7 @@ export default function TransactionManager({
       )}
 
       {/* BILAH ALAT: Filter & Tombol Aksi Utama */}
-      <div className="bg-rakta-card border border-rakta-subtle/70 rounded-2xl p-4 md:p-5 rakta-card-shadow flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+      <div className="bg-white border border-rakta-border rounded-2xl p-4 md:p-5 rakta-card-shadow flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         {/* Kolom Kiri: Search & Filter Tipe */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 flex-1">
           <div className="relative flex-1 min-w-55">
@@ -322,7 +320,7 @@ export default function TransactionManager({
               placeholder="Cari nomor transaksi, produk, customer, atau supplier..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 text-sm rounded-xl bg-rakta-card border border-rakta-subtle text-rakta-navy placeholder:text-rakta-muted/60 focus:outline-none focus:border-rakta-primary focus:ring-2 focus:ring-rakta-primary/20 transition-all"
+              className="w-full pl-9 pr-4 py-2 text-xs rounded-xl bg-white border border-rakta-border text-rakta-navy placeholder:text-rakta-muted/60 focus:outline-none focus:border-rakta-primary focus:ring-1 focus:ring-rakta-primary/20 transition-all"
             />
             {searchQuery && (
               <button
@@ -335,12 +333,12 @@ export default function TransactionManager({
           </div>
 
           {/* Filter Tipe Transaksi */}
-          <div className="inline-flex p-1 bg-rakta-surface border border-rakta-subtle/80 rounded-full shrink-0">
+          <div className="inline-flex p-0.5 bg-rakta-surface border border-rakta-border rounded-xl shrink-0">
             <button
               onClick={() => setTypeFilter("all")}
-              className={`px-3 py-1 text-xs font-semibold rounded-full transition-all ${
+              className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${
                 typeFilter === "all"
-                  ? "bg-rakta-card text-rakta-navy shadow-xs"
+                  ? "bg-white text-rakta-navy shadow-2xs font-semibold"
                   : "text-rakta-muted hover:text-rakta-navy"
               }`}
             >
@@ -348,9 +346,9 @@ export default function TransactionManager({
             </button>
             <button
               onClick={() => setTypeFilter("incoming")}
-              className={`px-3 py-1 text-xs font-semibold rounded-full transition-all ${
+              className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${
                 typeFilter === "incoming"
-                  ? "bg-emerald-50 text-emerald-700 shadow-xs border border-emerald-200"
+                  ? "bg-white text-emerald-700 shadow-2xs font-semibold"
                   : "text-rakta-muted hover:text-rakta-navy"
               }`}
             >
@@ -358,9 +356,9 @@ export default function TransactionManager({
             </button>
             <button
               onClick={() => setTypeFilter("outgoing")}
-              className={`px-3 py-1 text-xs font-semibold rounded-full transition-all ${
+              className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${
                 typeFilter === "outgoing"
-                  ? "bg-rose-50 text-rose-700 shadow-xs border border-rose-200"
+                  ? "bg-white text-rose-700 shadow-2xs font-semibold"
                   : "text-rakta-muted hover:text-rakta-navy"
               }`}
             >
@@ -368,9 +366,9 @@ export default function TransactionManager({
             </button>
             <button
               onClick={() => setTypeFilter("adjustment")}
-              className={`px-3 py-1 text-xs font-semibold rounded-full transition-all ${
+              className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${
                 typeFilter === "adjustment"
-                  ? "bg-sky-50 text-sky-700 shadow-xs border border-sky-200"
+                  ? "bg-white text-sky-700 shadow-2xs font-semibold"
                   : "text-rakta-muted hover:text-rakta-navy"
               }`}
             >
@@ -384,7 +382,7 @@ export default function TransactionManager({
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="pl-3 pr-8 py-1.5 text-xs rounded-xl bg-rakta-card border border-rakta-subtle text-rakta-navy focus:outline-none focus:border-rakta-primary focus:ring-2 focus:ring-rakta-primary/20 transition-all appearance-none cursor-pointer"
+            className="pl-3 pr-8 py-2 text-xs rounded-xl bg-white border border-rakta-border text-rakta-navy focus:outline-none focus:border-rakta-primary focus:ring-1 focus:ring-rakta-primary/20 transition-all appearance-none cursor-pointer"
           >
             <option value="all">Semua Status</option>
             <option value="pending">Menunggu Persetujuan</option>
@@ -397,10 +395,10 @@ export default function TransactionManager({
           {/* Tombol Ekspor CSV */}
           <Button
             onClick={handleExportCsv}
-            variant="outline"
-            className="rounded-full bg-rakta-card border border-rakta-subtle text-rakta-navy hover:bg-rakta-surface text-xs font-semibold px-4 py-2 flex items-center gap-1.5 shadow-none transition-all cursor-pointer"
+            variant="secondary"
+            className="text-xs font-medium px-3.5 py-2 flex items-center gap-1.5"
           >
-            <Download className="w-4 h-4" />
+            <Download className="w-3.5 h-3.5 text-rakta-muted" />
             <span>Ekspor CSV</span>
           </Button>
 
@@ -411,40 +409,35 @@ export default function TransactionManager({
                 setOutQtyInput("");
                 setModalMode("out");
               }}
-              className="rounded-full bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold px-4 py-2 flex items-center gap-1.5 shadow-xs transition-all cursor-pointer"
+              className="bg-rose-600 hover:bg-rose-700 text-white text-xs font-medium px-4 py-2 flex items-center gap-1.5"
             >
-              <ArrowUpRight className="w-4 h-4" />
+              <Plus className="w-4 h-4" />
               <span>Ajukan Barang Keluar</span>
             </Button>
           )}
         </div>
       </div>
 
-      {/* SECTION: Pesanan Restock Tiba di Gudang (Staff Gudang & Admin)             */}
+      {/* SECTION: Pesanan Restock Tiba di Gudang (Staff Gudang & Admin) */}
       {(userRole === "staff_gudang" || userRole === "admin") && (
-        <div className="bg-rakta-card border border-rakta-subtle/80 rounded-2xl p-5 md:p-6 rakta-card-shadow space-y-4">
-          <div className="flex items-center justify-between pb-3 border-b border-rakta-subtle/60">
-            <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 flex items-center justify-center">
-                <PackageCheck className="w-4 h-4" />
-              </div>
-              <div>
-                <h2 className="text-base font-bold text-rakta-navy">
-                  Pesanan Tiba &amp; Pemeriksaan Fisik (Inspecting)
-                </h2>
-                <p className="text-xs text-rakta-muted">
-                  Pesanan PO yang telah tiba di gudang. Lakukan cek fisik, periksa bukti foto, dan buat dokumen transaksi masuk agar dapat disetujui untuk penambahan stok.
-                </p>
-              </div>
+        <div className="bg-white border border-rakta-border rounded-2xl p-5 md:p-6 rakta-card-shadow space-y-4">
+          <div className="flex items-center justify-between pb-3 border-b border-rakta-border/60">
+            <div>
+              <h2 className="text-base font-bold text-rakta-navy">
+                Pesanan Tiba dan Pemeriksaan Fisik
+              </h2>
+              <p className="text-xs text-rakta-muted mt-0.5">
+                Pesanan PO yang telah tiba di gudang. Lakukan cek fisik, periksa bukti foto, dan buat dokumen transaksi masuk agar dapat disetujui.
+              </p>
             </div>
-            <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+            <span className="text-xs font-mono font-medium px-2.5 py-1 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200">
               {receivedOrders.length} Pesanan Tiba
             </span>
           </div>
 
           {receivedOrders.length === 0 ? (
-            <div className="p-5 rounded-xl bg-rakta-surface/60 border border-dashed border-rakta-subtle text-center text-xs text-rakta-muted">
-              Tidak ada pesanan restock berstatus <span className="font-semibold text-emerald-700">Inspecting / Received</span> yang belum diproses dokumen masuknya.
+            <div className="p-5 rounded-xl bg-rakta-surface/50 border border-dashed border-rakta-border text-center text-xs text-rakta-muted">
+              Tidak ada pesanan restock tiba yang belum diproses dokumen masuknya.
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -454,15 +447,14 @@ export default function TransactionManager({
                 return (
                   <div
                     key={ro.id}
-                    className="p-4 rounded-xl border border-rakta-subtle/80 bg-rakta-surface/40 hover:bg-rakta-surface/70 transition-all flex flex-col justify-between gap-3"
+                    className="p-4 rounded-xl border border-rakta-border bg-rakta-surface/30 hover:bg-rakta-surface/60 transition-all flex flex-col justify-between gap-3"
                   >
                     <div>
                       <div className="flex items-center justify-between gap-2">
-                        <span className="font-mono text-xs font-bold px-2 py-0.5 rounded-md bg-rakta-subtle/50 text-rakta-navy border border-rakta-subtle">
+                        <span className="font-mono text-xs font-bold px-2 py-0.5 rounded-lg bg-white text-rakta-navy border border-rakta-border tabular-nums">
                           {ro.nomor_po}
                         </span>
-                        <span className="text-[11px] text-rakta-muted flex items-center gap-1">
-                          <Calendar className="w-3 h-3 text-rakta-primary" />
+                        <span className="text-[11px] text-rakta-muted font-mono tabular-nums">
                           {formatTanggal(ro.tanggal_order)}
                         </span>
                       </div>
@@ -472,17 +464,17 @@ export default function TransactionManager({
                         <span>{ro.supplier_perusahaan || ro.supplier_nama}</span>
                       </div>
 
-                      <div className="mt-2 pt-2 border-t border-rakta-subtle/60 flex items-center justify-between text-xs">
+                      <div className="mt-2 pt-2 border-t border-rakta-border/60 flex items-center justify-between text-xs">
                         <span className="font-medium text-rakta-navy truncate max-w-45">
                           {ro.product_nama}
                         </span>
-                        <span className="font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 shrink-0">
+                        <span className="font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-200 font-mono tabular-nums shrink-0">
                           +{ro.qty} {ro.unit}
                         </span>
                       </div>
 
                       {ro.foto_bukti_url && (
-                        <div className="mt-2 pt-2 border-t border-rakta-subtle/40">
+                        <div className="mt-2 pt-2 border-t border-rakta-border/40">
                           <a
                             href={ro.foto_bukti_url}
                             target="_blank"
@@ -504,7 +496,7 @@ export default function TransactionManager({
                           setModalMode("incoming_po");
                         }}
                         disabled={isItemProcessing}
-                        className="w-full rounded-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold py-2 flex items-center justify-center gap-1.5 shadow-2xs transition-colors cursor-pointer"
+                        className="w-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium py-2 flex items-center justify-center gap-1.5"
                       >
                         <FileText className="w-3.5 h-3.5" />
                         <span>Buat Dokumen Masuk</span>
@@ -518,30 +510,30 @@ export default function TransactionManager({
         </div>
       )}
 
-      {/* TABEL: Daftar Transaksi Logistik                                          */}
-      <div className="bg-rakta-card border border-rakta-subtle/70 rounded-2xl rakta-card-shadow overflow-hidden">
+      {/* TABEL: Daftar Transaksi Logistik */}
+      <div className="bg-white border border-rakta-border rounded-2xl rakta-card-shadow overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm border-collapse">
+          <table className="w-full text-left text-xs border-collapse">
             <thead>
-              <tr className="border-b border-rakta-subtle/60 bg-rakta-surface/70 text-xs font-semibold text-rakta-muted uppercase tracking-wider">
-                <th className="px-5 py-3.5">Nomor &amp; Waktu</th>
-                <th className="px-5 py-3.5 text-center">Tipe</th>
-                <th className="px-5 py-3.5">Barang &amp; Kuantitas</th>
-                <th className="px-5 py-3.5">Tujuan / Pemasok</th>
-                <th className="px-5 py-3.5 text-center">Status</th>
-                <th className="px-5 py-3.5 text-right">Aksi Alur Kerja</th>
+              <tr className="border-b border-rakta-border bg-rakta-surface text-rakta-muted font-medium">
+                <th className="px-5 py-3">Nomor dan waktu</th>
+                <th className="px-5 py-3 text-center">Tipe</th>
+                <th className="px-5 py-3">Barang dan kuantitas</th>
+                <th className="px-5 py-3">Tujuan / pemasok</th>
+                <th className="px-5 py-3 text-center">Status</th>
+                <th className="px-5 py-3 text-right">Aksi alur kerja</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-rakta-subtle/40">
+            <tbody className="divide-y divide-rakta-border/40">
               {filteredTransactions.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-5 py-12 text-center text-rakta-muted">
-                    <ArrowLeftRight className="w-10 h-10 mx-auto mb-2 text-rakta-muted/50" />
-                    <p className="font-semibold text-rakta-navy text-base">
+                    <ArrowLeftRight className="w-8 h-8 mx-auto mb-2 text-rakta-muted/40" />
+                    <p className="font-semibold text-rakta-navy text-sm">
                       Tidak ada riwayat transaksi ditemukan
                     </p>
-                    <p className="text-xs text-rakta-muted mt-1 max-w-sm mx-auto">
-                      Coba sesuaikan kata kunci pencarian atau tab filter jenis transaksi di atas.
+                    <p className="text-xs text-rakta-muted mt-1">
+                      Sesuaikan kata kunci pencarian atau tab filter jenis transaksi di atas.
                     </p>
                   </td>
                 </tr>
@@ -557,45 +549,44 @@ export default function TransactionManager({
                   return (
                     <tr
                       key={t.id}
-                      className="hover:bg-rakta-surface/40 transition-colors group text-rakta-navy"
+                      className="hover:bg-rakta-surface/60 transition-colors text-rakta-navy"
                     >
                       {/* Nomor & Tanggal */}
-                      <td className="px-5 py-4">
+                      <td className="px-5 py-3.5">
                         <div className="space-y-1">
-                          <span className="font-mono text-xs font-bold px-2 py-0.5 rounded-md bg-rakta-subtle/40 text-rakta-navy border border-rakta-subtle/70">
+                          <span className="font-mono text-xs font-bold px-2 py-0.5 rounded-lg bg-rakta-surface text-rakta-navy border border-rakta-border tabular-nums">
                             {t.nomor_transaksi}
                           </span>
-                          <div className="text-xs text-rakta-muted flex items-center gap-1">
-                            <Clock className="w-3 h-3 text-rakta-primary shrink-0" />
-                            <span>{formatTanggal(t.tanggal_transaksi || t.created_at, true)}</span>
+                          <div className="text-[11px] text-rakta-muted font-mono tabular-nums">
+                            {formatTanggal(t.tanggal_transaksi || t.created_at, true)}
                           </div>
                         </div>
                       </td>
 
                       {/* Tipe Transaksi */}
-                      <td className="px-5 py-4 text-center">
+                      <td className="px-5 py-3.5 text-center">
                         {isMasuk && (
-                          <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
-                            <ArrowDownLeft className="w-3 h-3" />
+                          <span className="inline-flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-0.5 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                             Barang Masuk
                           </span>
                         )}
                         {isKeluar && (
-                          <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200">
-                            <ArrowUpRight className="w-3 h-3" />
+                          <span className="inline-flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-0.5 rounded-lg bg-sky-50 text-sky-700 border border-sky-200">
+                            <span className="w-1.5 h-1.5 rounded-full bg-sky-500" />
                             Barang Keluar
                           </span>
                         )}
                         {isPenyesuaian && (
-                          <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-sky-50 text-sky-700 border border-sky-200">
-                            <SlidersHorizontal className="w-3 h-3" />
+                          <span className="inline-flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-0.5 rounded-lg bg-slate-100 text-slate-700 border border-slate-200">
+                            <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
                             Penyesuaian
                           </span>
                         )}
                       </td>
 
                       {/* Barang & Kuantitas */}
-                      <td className="px-5 py-4">
+                      <td className="px-5 py-3.5">
                         <div className="space-y-1">
                           {t.single_product_nama ? (
                             <div className="flex items-center gap-2 text-xs">
@@ -603,7 +594,7 @@ export default function TransactionManager({
                                 {t.single_product_nama}
                               </span>
                               <span
-                                className={`font-bold px-2 py-0.5 rounded-full text-[11px] shrink-0 ${
+                                className={`font-mono tabular-nums font-bold px-2 py-0.5 rounded-lg text-[11px] shrink-0 ${
                                   isMasuk
                                     ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
                                     : isKeluar
@@ -622,7 +613,7 @@ export default function TransactionManager({
                                   {it.product_nama}
                                 </span>
                                 <span
-                                  className={`font-bold px-2 py-0.5 rounded-full text-[11px] shrink-0 ${
+                                  className={`font-mono tabular-nums font-bold px-2 py-0.5 rounded-lg text-[11px] shrink-0 ${
                                     isMasuk
                                       ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
                                       : isKeluar
@@ -640,20 +631,20 @@ export default function TransactionManager({
                       </td>
 
                       {/* Pihak Terkait (Customer / Supplier) */}
-                      <td className="px-5 py-4">
+                      <td className="px-5 py-3.5">
                         <div className="text-xs">
                           {t.tujuan_customer ? (
                             <div className="font-semibold text-rakta-navy flex items-center gap-1">
-                              <User className="w-3.5 h-3.5 text-rakta-primary shrink-0" />
+                              <User className="w-3.5 h-3.5 text-rakta-muted shrink-0" />
                               <span>{t.tujuan_customer}</span>
                             </div>
                           ) : t.supplier_perusahaan || t.supplier_nama ? (
                             <div className="font-semibold text-rakta-navy flex items-center gap-1">
-                              <Building2 className="w-3.5 h-3.5 text-rakta-primary shrink-0" />
+                              <Building2 className="w-3.5 h-3.5 text-rakta-muted shrink-0" />
                               <span>{t.supplier_perusahaan || t.supplier_nama}</span>
                             </div>
                           ) : (
-                            <span className="text-rakta-muted italic">-</span>
+                            <span className="text-rakta-muted italic">:</span>
                           )}
                           {t.catatan && (
                             <p className="text-[11px] text-rakta-muted mt-0.5 truncate max-w-xs">
@@ -664,39 +655,39 @@ export default function TransactionManager({
                       </td>
 
                       {/* Status */}
-                      <td className="px-5 py-4 text-center">
+                      <td className="px-5 py-3.5 text-center">
                         {t.status === "pending" && (
-                          <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
-                            <Clock className="w-3 h-3" />
+                          <span className="inline-flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-0.5 rounded-lg bg-amber-50 text-amber-700 border border-amber-200">
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
                             Pending
                           </span>
                         )}
                         {t.status === "approved" && (
-                          <span className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-0.5 rounded-full border ${
+                          <span className={`inline-flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-0.5 rounded-lg border ${
                             isKeluar
                               ? "bg-purple-50 text-purple-700 border-purple-200"
                               : "bg-emerald-50 text-emerald-700 border-emerald-200"
                           }`}>
-                            <CheckCircle2 className="w-3 h-3" />
+                            <span className={`w-1.5 h-1.5 rounded-full ${isKeluar ? "bg-purple-500" : "bg-emerald-500"}`} />
                             {isKeluar ? "Disetujui (Packing)" : "Disetujui"}
                           </span>
                         )}
                         {t.status === "shipped" && (
-                          <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
-                            <CheckCircle2 className="w-3 h-3" />
-                            Terkirim (Shipped)
+                          <span className="inline-flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-0.5 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                            Terkirim
                           </span>
                         )}
                         {t.status === "completed" && (
-                          <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
-                            <CheckCircle2 className="w-3 h-3" />
-                            Selesai (Terkirim)
+                          <span className="inline-flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-0.5 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                            Selesai
                           </span>
                         )}
                         {t.status === "rejected" && (
                           <div className="inline-flex flex-col items-center">
-                            <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200">
-                              <XCircle className="w-3 h-3" />
+                            <span className="inline-flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-0.5 rounded-lg bg-rose-50 text-rose-700 border border-rose-200">
+                              <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
                               Ditolak
                             </span>
                             {t.rejection_reason && (
@@ -709,78 +700,74 @@ export default function TransactionManager({
                       </td>
 
                       {/* Aksi Berdasarkan Peran Pengguna */}
-                      <td className="px-5 py-4 text-right">
-                        {/* Aksi Warehouse Manager & Admin */}
+                      <td className="px-5 py-3.5 text-right">
                         {(userRole === "warehouse_manager" || userRole === "admin") && (
                           <div className="flex items-center justify-end gap-1.5">
-                            {/* Transaksi Pending: Tombol Approve & Reject */}
                             {t.status === "pending" && (
                               <>
-                                <button
+                                <Button
+                                  size="sm"
                                   onClick={() => isMasuk ? handleApproveIncoming(t) : handleApproveOutgoing(t)}
                                   disabled={isTrxProcessing}
-                                  className="px-2.5 py-1 text-xs font-semibold rounded-full bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 flex items-center gap-1 transition-colors disabled:opacity-50 cursor-pointer"
-                                  title={isMasuk ? "Setujui & Tambah Stok" : "Setujui untuk Packing"}
+                                  className="bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] px-2.5 py-1"
                                 >
                                   {isTrxProcessing ? (
                                     <Loader2 className="w-3 h-3 animate-spin" />
                                   ) : (
-                                    <CheckCircle2 className="w-3 h-3" />
+                                    <CheckCircle2 className="w-3 h-3 mr-1" />
                                   )}
                                   <span>Setujui</span>
-                                </button>
+                                </Button>
 
-                                <button
+                                <Button
+                                  variant="danger"
+                                  size="sm"
                                   onClick={() => {
                                     setSelectedTransactionForReject(t);
                                     setRejectionReasonInput("");
                                     setModalMode("reject");
                                   }}
                                   disabled={isTrxProcessing}
-                                  className="px-2.5 py-1 text-xs font-semibold rounded-full bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 flex items-center gap-1 transition-colors disabled:opacity-50 cursor-pointer"
-                                  title="Tolak Transaksi"
+                                  className="text-[11px] px-2.5 py-1"
                                 >
-                                  <XCircle className="w-3 h-3" />
+                                  <XCircle className="w-3 h-3 mr-1" />
                                   <span>Tolak</span>
-                                </button>
+                                </Button>
                               </>
                             )}
 
                             {t.status === "approved" && isKeluar && (
-                              <span className="text-xs text-purple-700 bg-purple-50 px-2.5 py-1 rounded-full border border-purple-200">
+                              <span className="text-xs text-purple-700 bg-purple-50 px-2.5 py-0.5 rounded-lg border border-purple-200 font-medium">
                                 Menunggu Kirim Staff
                               </span>
                             )}
 
                             {(t.status === "completed" || t.status === "shipped" || (t.status === "approved" && isMasuk) || t.status === "rejected") && (
-                              <span className="text-xs text-rakta-muted font-medium bg-rakta-surface px-2.5 py-1 rounded-full border border-rakta-subtle/60">
+                              <span className="text-xs text-rakta-muted font-medium bg-rakta-surface px-2.5 py-0.5 rounded-lg border border-rakta-border">
                                 Selesai
                               </span>
                             )}
                           </div>
                         )}
 
-                        {/* Aksi Staff Gudang */}
                         {userRole === "staff_gudang" && (
                           <div className="flex items-center justify-end gap-1.5">
-                            {/* Transaksi Keluar yang telah Approved: Tombol Kirim Barang */}
                             {t.status === "approved" && isKeluar && (
-                              <button
+                              <Button
+                                size="sm"
                                 onClick={() => handleDispatchOutgoing(t)}
                                 disabled={isTrxProcessing}
-                                className="px-3 py-1 text-xs font-semibold rounded-full bg-rakta-primary hover:bg-rakta-navy text-white flex items-center gap-1 shadow-xs transition-colors disabled:opacity-50 cursor-pointer"
-                                title="Pengemasan Selesai, Kirim Barang"
+                                className="bg-rakta-primary hover:bg-rakta-primary-hover text-white text-[11px] px-3 py-1 font-medium"
                               >
                                 {isTrxProcessing ? (
                                   <Loader2 className="w-3 h-3 animate-spin" />
                                 ) : (
-                                  <Send className="w-3 h-3" />
+                                  <Send className="w-3 h-3 mr-1" />
                                 )}
                                 <span>Kirim Barang</span>
-                              </button>
+                              </Button>
                             )}
 
-                            {/* Transaksi Pending Keluar: Staff dapat edit & batalkan */}
                             {t.status === "pending" && isKeluar && (
                               <div className="flex items-center gap-1">
                                 <button
@@ -788,32 +775,32 @@ export default function TransactionManager({
                                     setSelectedTrxForEdit(t);
                                     setModalMode("edit_out");
                                   }}
-                                  className="p-1 rounded-lg text-rakta-navy hover:bg-rakta-surface border border-rakta-subtle transition-colors cursor-pointer"
+                                  className="p-1.5 rounded-lg text-rakta-navy hover:bg-rakta-surface border border-rakta-border transition-colors"
                                   title="Edit Pengajuan Keluar"
                                 >
-                                  <Pencil className="w-3.5 h-3.5 text-rakta-muted hover:text-rakta-navy" />
+                                  <Pencil className="w-3.5 h-3.5 text-rakta-muted" />
                                 </button>
                                 <button
                                   onClick={() => setConfirmDeleteTrx(t)}
-                                  className="p-1 rounded-lg text-rose-600 hover:bg-rose-50 border border-rose-200 transition-colors cursor-pointer"
+                                  className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-50 border border-rose-200 transition-colors"
                                   title="Batalkan Pengajuan Keluar"
                                 >
                                   <Trash2 className="w-3.5 h-3.5" />
                                 </button>
-                                <span className="text-xs text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
+                                <span className="text-xs text-amber-700 bg-amber-50 px-2 py-0.5 rounded-lg border border-amber-200 font-medium">
                                   Pending
                                 </span>
                               </div>
                             )}
 
                             {t.status === "pending" && !isKeluar && (
-                              <span className="text-xs text-amber-700 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-200">
+                              <span className="text-xs text-amber-700 bg-amber-50 px-2.5 py-0.5 rounded-lg border border-amber-200 font-medium">
                                 Menunggu Persetujuan
                               </span>
                             )}
 
                             {(t.status === "completed" || t.status === "shipped" || (t.status === "approved" && isMasuk) || t.status === "rejected") && (
-                              <span className="text-xs text-rakta-muted font-medium bg-rakta-surface px-2.5 py-1 rounded-full border border-rakta-subtle/60">
+                              <span className="text-xs text-rakta-muted font-medium bg-rakta-surface px-2.5 py-0.5 rounded-lg border border-rakta-border">
                                 Selesai
                               </span>
                             )}
@@ -822,7 +809,7 @@ export default function TransactionManager({
 
                         {userRole === "supplier" && (
                           <div className="text-right">
-                            <span className="text-xs text-rakta-muted font-medium bg-rakta-surface px-2.5 py-1 rounded-full border border-rakta-subtle/60">
+                            <span className="text-xs text-rakta-muted font-medium bg-rakta-surface px-2.5 py-0.5 rounded-lg border border-rakta-border">
                               Riwayat
                             </span>
                           </div>
@@ -837,33 +824,33 @@ export default function TransactionManager({
         </div>
       </div>
 
-      {/* MODAL: Buat Dokumen Barang Masuk dari PO Received (Staff Gudang)           */}
+      {/* MODAL: Buat Dokumen Barang Masuk dari PO Received (Staff Gudang) */}
       {modalMode === "incoming_po" && selectedReceivedOrder && (
-        <div className="fixed inset-0 z-50 bg-rakta-navy/40 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-rakta-card border border-rakta-subtle/80 rounded-2xl w-full max-w-lg p-6 rakta-card-shadow relative my-8 animate-in fade-in zoom-in-95 duration-200">
-            <div className="flex items-center justify-between pb-4 border-b border-rakta-subtle/60">
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-2xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white border border-rakta-border rounded-2xl w-full max-w-lg shadow-xl overflow-hidden my-8 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-rakta-border/60">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                <div className="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
                   <FileText className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-base text-rakta-navy">Dokumen Barang Masuk PO</h3>
-                  <p className="text-xs text-rakta-muted">Verifikasi fisik penerimaan barang restock dari supplier</p>
+                  <h3 className="font-semibold text-sm text-rakta-navy">Dokumen Barang Masuk PO</h3>
+                  <p className="text-[11px] text-rakta-muted">Verifikasi fisik penerimaan barang restock dari supplier</p>
                 </div>
               </div>
               <button
                 onClick={() => setModalMode(null)}
-                className="text-rakta-muted hover:text-rakta-navy p-1 transition-colors"
+                className="text-rakta-muted hover:text-rakta-navy p-1 rounded-lg hover:bg-rakta-surface transition-colors"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="mt-4 space-y-3.5">
-              <div className="p-3 bg-rakta-surface/70 rounded-xl border border-rakta-subtle/70 space-y-2 text-xs">
+            <div className="p-6 space-y-4">
+              <div className="p-3 bg-rakta-surface/60 rounded-xl border border-rakta-border space-y-2 text-xs">
                 <div className="flex items-center justify-between">
                   <span className="text-rakta-muted">Nomor PO:</span>
-                  <span className="font-bold font-mono text-rakta-navy">{selectedReceivedOrder.nomor_po}</span>
+                  <span className="font-bold font-mono text-rakta-navy tabular-nums">{selectedReceivedOrder.nomor_po}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-rakta-muted">Supplier:</span>
@@ -875,18 +862,18 @@ export default function TransactionManager({
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-rakta-muted">Kuantitas Masuk:</span>
-                  <span className="font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                  <span className="font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-200 font-mono tabular-nums">
                     +{selectedReceivedOrder.qty} {selectedReceivedOrder.unit}
                   </span>
                 </div>
                 {selectedReceivedOrder.foto_bukti_url && (
-                  <div className="flex items-center justify-between pt-1 border-t border-rakta-subtle/50">
+                  <div className="flex items-center justify-between pt-1 border-t border-rakta-border/50">
                     <span className="text-rakta-muted">Bukti Foto:</span>
                     <a
                       href={selectedReceivedOrder.foto_bukti_url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-rakta-primary font-semibold hover:underline flex items-center gap-1"
+                      className="text-rakta-primary font-semibold hover:underline flex items-center gap-1 text-[11px]"
                     >
                       <ImageIcon className="w-3.5 h-3.5" />
                       Lihat Foto Kedatangan
@@ -896,7 +883,7 @@ export default function TransactionManager({
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-rakta-navy mb-1">
+                <label className="block text-xs font-medium text-rakta-navy mb-1">
                   Laporan Hasil Pemeriksaan Fisik Gudang (Opsional)
                 </label>
                 <textarea
@@ -904,26 +891,17 @@ export default function TransactionManager({
                   value={incomingNotesInput}
                   onChange={(e) => setIncomingNotesInput(e.target.value)}
                   placeholder="Contoh: Kondisi fisik barang utuh, barcode sesuai, segel pabrik aman, tidak ada cacat atau kerusakan..."
-                  className="w-full px-3.5 py-2 text-xs rounded-xl bg-rakta-card border border-rakta-subtle text-rakta-navy placeholder:text-rakta-muted/60 focus:outline-none focus:border-rakta-primary focus:ring-2 focus:ring-rakta-primary/20 transition-all resize-none"
+                  className="w-full px-3.5 py-2 text-xs rounded-xl bg-white border border-rakta-border text-rakta-navy placeholder:text-rakta-muted/60 focus:outline-none focus:border-rakta-primary focus:ring-1 focus:ring-rakta-primary/20 transition-all resize-none"
                 />
               </div>
 
-              <div className="p-3 rounded-xl bg-amber-50 border border-amber-200/80 text-[11px] text-amber-800 space-y-1">
-                <p className="font-semibold flex items-center gap-1">
-                  <Clock className="w-3.5 h-3.5 text-amber-600" />
-                  Alur Pemeriksaan &amp; Persetujuan:
-                </p>
-                <p>
-                  Setelah dokumen dibuat (status: Pending), Warehouse Manager akan meninjau laporan fisik. Jika Disetujui, stok bertambah secara atomik dan PO menjadi Received. Jika Ditolak karena cacat/rusak, PO berubah menjadi Returned untuk pengajuan klaim refund.
-                </p>
-              </div>
-
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-rakta-subtle/60">
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-rakta-border/60">
                 <Button
                   type="button"
-                  variant="secondary"
+                  variant="ghost"
                   onClick={() => setModalMode(null)}
                   disabled={isProcessing}
+                  className="text-xs"
                 >
                   Batal
                 </Button>
@@ -931,7 +909,7 @@ export default function TransactionManager({
                   type="button"
                   onClick={handleCreateIncomingFromPO}
                   disabled={isProcessing}
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs"
                 >
                   {isProcessing ? "Menyimpan..." : "Buat Dokumen Masuk"}
                 </Button>
@@ -941,38 +919,38 @@ export default function TransactionManager({
         </div>
       )}
 
-      {/* MODAL: Ajukan Barang Keluar (Staff Gudang)                                 */}
+      {/* MODAL: Ajukan Barang Keluar (Staff Gudang) */}
       {modalMode === "out" && (
-        <div className="fixed inset-0 z-50 bg-rakta-navy/40 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-rakta-card border border-rakta-subtle/80 rounded-2xl w-full max-w-lg p-6 rakta-card-shadow relative my-8 animate-in fade-in zoom-in-95 duration-200">
-            <div className="flex items-center justify-between pb-4 border-b border-rakta-subtle/60">
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-2xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white border border-rakta-border rounded-2xl w-full max-w-lg shadow-xl overflow-hidden my-8 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-rakta-border/60">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center">
-                  <ArrowUpRight className="w-4 h-4" />
+                <div className="w-7 h-7 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center">
+                  <Package className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-base text-rakta-navy">Pengajuan Barang Keluar</h3>
-                  <p className="text-xs text-rakta-muted">Pengeluaran barang ke customer / distribusi</p>
+                  <h3 className="font-semibold text-sm text-rakta-navy">Pengajuan Barang Keluar</h3>
+                  <p className="text-[11px] text-rakta-muted">Pengeluaran barang ke customer / distribusi</p>
                 </div>
               </div>
               <button
                 onClick={() => setModalMode(null)}
-                className="text-rakta-muted hover:text-rakta-navy p-1 transition-colors"
+                className="text-rakta-muted hover:text-rakta-navy p-1 rounded-lg hover:bg-rakta-surface transition-colors"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
 
             {outState?.error && (
-              <div className="mt-4 p-3 bg-rose-50 border border-rose-200 text-rose-800 rounded-xl text-xs flex items-center gap-2">
+              <div className="m-6 mb-0 p-3 bg-rose-50 border border-rose-200 text-rose-800 rounded-xl text-xs flex items-center gap-2">
                 <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
                 <span>{outState.error}</span>
               </div>
             )}
 
-            <form action={outAction} className="mt-4 space-y-4">
+            <form action={outAction} className="p-6 space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-rakta-navy mb-1">
+                <label className="block text-xs font-medium text-rakta-navy mb-1">
                   Pilih Produk Gudang <span className="text-rose-500">*</span>
                 </label>
                 <select
@@ -982,19 +960,19 @@ export default function TransactionManager({
                     const prod = products.find((p) => String(p.id) === e.target.value);
                     setSelectedProductForOut(prod || null);
                   }}
-                  className="w-full px-3.5 py-2 text-xs rounded-xl bg-rakta-card border border-rakta-subtle text-rakta-navy focus:outline-none focus:border-rakta-primary focus:ring-2 focus:ring-rakta-primary/20 transition-all cursor-pointer"
+                  className="w-full px-3.5 py-2 text-xs rounded-xl bg-white border border-rakta-border text-rakta-navy focus:outline-none focus:border-rakta-primary focus:ring-1 focus:ring-rakta-primary/20 transition-all cursor-pointer"
                 >
-                  <option value="">-- Pilih Produk yang Hendak Dikeluarkan --</option>
+                  <option value="">Pilih produk yang hendak dikeluarkan</option>
                   {products.map((p) => (
                     <option key={p.id} value={p.id}>
-                      {p.nama} ({p.sku}) | Stok Tersedia: {p.jumlah_stok} {p.unit}
+                      {p.nama} ({p.sku}) | Stok: {p.jumlah_stok} {p.unit}
                     </option>
                   ))}
                 </select>
               </div>
 
               {selectedProductForOut && (
-                <div className="p-3 bg-rakta-surface/70 rounded-xl border border-rakta-subtle/80 flex items-center justify-between text-xs">
+                <div className="p-3 bg-rakta-surface/60 rounded-xl border border-rakta-border flex items-center justify-between text-xs">
                   <div>
                     <span className="text-rakta-muted">Lokasi Rak:</span>{" "}
                     <span className="font-semibold text-rakta-navy font-mono">
@@ -1002,8 +980,8 @@ export default function TransactionManager({
                     </span>
                   </div>
                   <div>
-                    <span className="text-rakta-muted">Stok Gudang:</span>{" "}
-                    <span className="font-bold text-rakta-primary">
+                    <span className="text-rakta-muted">Stok Tersedia:</span>{" "}
+                    <span className="font-bold text-rakta-primary font-mono tabular-nums">
                       {selectedProductForOut.jumlah_stok} {selectedProductForOut.unit}
                     </span>
                   </div>
@@ -1012,7 +990,7 @@ export default function TransactionManager({
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div>
-                  <label className="block text-xs font-semibold text-rakta-navy mb-1">
+                  <label className="block text-xs font-medium text-rakta-navy mb-1">
                     Kuantitas Keluar <span className="text-rose-500">*</span>
                   </label>
                   <input
@@ -1024,12 +1002,12 @@ export default function TransactionManager({
                     onChange={(e) => setOutQtyInput(e.target.value)}
                     required
                     placeholder="Minimal 1"
-                    className="w-full px-3.5 py-2 text-xs rounded-xl bg-rakta-card border border-rakta-subtle text-rakta-navy focus:outline-none focus:border-rakta-primary focus:ring-2 focus:ring-rakta-primary/20 transition-all"
+                    className="w-full px-3.5 py-2 text-xs rounded-xl bg-white border border-rakta-border text-rakta-navy focus:outline-none focus:border-rakta-primary focus:ring-1 focus:ring-rakta-primary/20 transition-all font-mono tabular-nums"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-rakta-navy mb-1">
+                  <label className="block text-xs font-medium text-rakta-navy mb-1">
                     Nama Tujuan / Customer <span className="text-rose-500">*</span>
                   </label>
                   <input
@@ -1037,46 +1015,37 @@ export default function TransactionManager({
                     name="tujuan_customer"
                     required
                     placeholder="Contoh: Toko Elektronik Jaya"
-                    className="w-full px-3.5 py-2 text-xs rounded-xl bg-rakta-card border border-rakta-subtle text-rakta-navy focus:outline-none focus:border-rakta-primary focus:ring-2 focus:ring-rakta-primary/20 transition-all"
+                    className="w-full px-3.5 py-2 text-xs rounded-xl bg-white border border-rakta-border text-rakta-navy focus:outline-none focus:border-rakta-primary focus:ring-1 focus:ring-rakta-primary/20 transition-all"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-rakta-navy mb-1">
+                <label className="block text-xs font-medium text-rakta-navy mb-1">
                   Catatan / Keterangan Pengeluaran
                 </label>
                 <textarea
                   name="catatan"
                   rows={2}
                   placeholder="Keterangan pengiriman barang..."
-                  className="w-full px-3.5 py-2 text-xs rounded-xl bg-rakta-card border border-rakta-subtle text-rakta-navy placeholder:text-rakta-muted/60 focus:outline-none focus:border-rakta-primary focus:ring-2 focus:ring-rakta-primary/20 transition-all resize-none"
+                  className="w-full px-3.5 py-2 text-xs rounded-xl bg-white border border-rakta-border text-rakta-navy placeholder:text-rakta-muted/60 focus:outline-none focus:border-rakta-primary focus:ring-1 focus:ring-rakta-primary/20 transition-all resize-none"
                 />
               </div>
 
-              <div className="p-3 rounded-xl bg-rose-50 border border-rose-200/80 text-[11px] text-rose-800 space-y-1">
-                <p className="font-semibold flex items-center gap-1">
-                  <Clock className="w-3.5 h-3.5 text-rose-600" />
-                  Alur Barang Keluar 2 Tahap:
-                </p>
-                <p>
-                  Pengajuan akan masuk status Pending. Saat Warehouse Manager menyetujui, barang masuk tahap pengemasan (packing) dan stok belum berkurang. Stok baru berkurang tepat saat Staff menekan tombol Kirim Barang.
-                </p>
-              </div>
-
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-rakta-subtle/60">
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-rakta-border/60">
                 <Button
                   type="button"
-                  variant="secondary"
+                  variant="ghost"
                   onClick={() => setModalMode(null)}
                   disabled={isOutProgress}
+                  className="text-xs"
                 >
                   Batal
                 </Button>
                 <Button
                   type="submit"
                   disabled={isOutProgress}
-                  className="bg-rose-600 hover:bg-rose-700 text-white"
+                  className="bg-rose-600 hover:bg-rose-700 text-white text-xs"
                 >
                   {isOutProgress ? "Mengajukan..." : "Ajukan Barang Keluar"}
                 </Button>
@@ -1086,33 +1055,33 @@ export default function TransactionManager({
         </div>
       )}
 
-      {/* MODAL: Tolak Transaksi (Warehouse Manager)                                 */}
+      {/* MODAL: Tolak Transaksi (Warehouse Manager) */}
       {modalMode === "reject" && selectedTransactionForReject && (
-        <div className="fixed inset-0 z-50 bg-rakta-navy/40 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-rakta-card border border-rakta-subtle/80 rounded-2xl w-full max-w-md p-6 rakta-card-shadow relative my-8 animate-in fade-in zoom-in-95 duration-200">
-            <div className="flex items-center justify-between pb-3 border-b border-rakta-subtle/60">
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-2xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white border border-rakta-border rounded-2xl w-full max-w-md shadow-xl overflow-hidden my-8 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-rakta-border/60">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center">
+                <div className="w-7 h-7 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center">
                   <XCircle className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-sm text-rakta-navy">Penolakan Transaksi</h3>
-                  <p className="text-[11px] text-rakta-muted">
+                  <h3 className="font-semibold text-sm text-rakta-navy">Penolakan Transaksi</h3>
+                  <p className="text-[11px] text-rakta-muted font-mono tabular-nums">
                     Nomor: {selectedTransactionForReject.nomor_transaksi}
                   </p>
                 </div>
               </div>
               <button
                 onClick={() => setModalMode(null)}
-                className="text-rakta-muted hover:text-rakta-navy p-1 transition-colors"
+                className="text-rakta-muted hover:text-rakta-navy p-1 rounded-lg hover:bg-rakta-surface transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="mt-3.5 space-y-3">
+            <div className="p-6 space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-rakta-navy mb-1">
+                <label className="block text-xs font-medium text-rakta-navy mb-1">
                   Alasan Penolakan <span className="text-rose-500">*</span>
                 </label>
                 <textarea
@@ -1121,16 +1090,17 @@ export default function TransactionManager({
                   value={rejectionReasonInput}
                   onChange={(e) => setRejectionReasonInput(e.target.value)}
                   placeholder="Tuliskan alasan penolakan secara jelas..."
-                  className="w-full px-3.5 py-2 text-xs rounded-xl bg-rakta-card border border-rakta-subtle text-rakta-navy placeholder:text-rakta-muted/60 focus:outline-none focus:border-rakta-primary focus:ring-2 focus:ring-rakta-primary/20 transition-all resize-none"
+                  className="w-full px-3.5 py-2 text-xs rounded-xl bg-white border border-rakta-border text-rakta-navy placeholder:text-rakta-muted/60 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500/20 transition-all resize-none"
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-2 border-t border-rakta-subtle/60">
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-rakta-border/60">
                 <Button
                   type="button"
-                  variant="secondary"
+                  variant="ghost"
                   onClick={() => setModalMode(null)}
                   disabled={isProcessing}
+                  className="text-xs"
                 >
                   Batal
                 </Button>
@@ -1138,7 +1108,7 @@ export default function TransactionManager({
                   type="button"
                   onClick={handleConfirmReject}
                   disabled={isProcessing || !rejectionReasonInput.trim()}
-                  className="bg-rose-600 hover:bg-rose-700 text-white"
+                  className="bg-rose-600 hover:bg-rose-700 text-white text-xs"
                 >
                   {isProcessing ? "Menyimpan..." : "Konfirmasi Tolak"}
                 </Button>
@@ -1147,18 +1117,19 @@ export default function TransactionManager({
           </div>
         </div>
       )}
+
       {/* MODAL: Edit Pengajuan Barang Keluar (Staff Gudang) */}
       {modalMode === "edit_out" && selectedTrxForEdit && (
-        <div className="fixed inset-0 z-50 bg-rakta-navy/40 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-rakta-card border border-rakta-subtle/80 rounded-2xl w-full max-w-lg p-6 rakta-card-shadow relative my-8 animate-in fade-in zoom-in-95 duration-200">
-            <div className="flex items-center justify-between pb-4 border-b border-rakta-subtle/60">
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-2xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white border border-rakta-border rounded-2xl w-full max-w-lg shadow-xl overflow-hidden my-8 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-rakta-border/60">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center">
+                <div className="w-7 h-7 rounded-lg bg-rakta-surface text-rakta-primary flex items-center justify-center">
                   <Pencil className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-base text-rakta-navy">Edit Pengajuan Barang Keluar</h3>
-                  <p className="text-xs text-rakta-muted">Nomor Transaksi: {selectedTrxForEdit.nomor_transaksi}</p>
+                  <h3 className="font-semibold text-sm text-rakta-navy">Edit Pengajuan Barang Keluar</h3>
+                  <p className="text-[11px] text-rakta-muted font-mono tabular-nums">Nomor: {selectedTrxForEdit.nomor_transaksi}</p>
                 </div>
               </div>
               <button
@@ -1166,20 +1137,20 @@ export default function TransactionManager({
                   setModalMode(null);
                   setSelectedTrxForEdit(null);
                 }}
-                className="text-rakta-muted hover:text-rakta-navy p-1 transition-colors"
+                className="text-rakta-muted hover:text-rakta-navy p-1 rounded-lg hover:bg-rakta-surface transition-colors"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
 
             {editOutState?.error && (
-              <div className="mt-4 p-3 bg-rose-50 border border-rose-200 text-rose-800 rounded-xl text-xs flex items-center gap-2">
+              <div className="m-6 mb-0 p-3 bg-rose-50 border border-rose-200 text-rose-800 rounded-xl text-xs flex items-center gap-2">
                 <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
                 <span>{editOutState.error}</span>
               </div>
             )}
 
-            <form action={editOutAction} className="mt-4 space-y-4">
+            <form action={editOutAction} className="p-6 space-y-4">
               <input type="hidden" name="transaction_id" value={selectedTrxForEdit.id} />
               <input
                 type="hidden"
@@ -1192,10 +1163,10 @@ export default function TransactionManager({
               />
 
               <div>
-                <label className="block text-xs font-semibold text-rakta-navy mb-1">
-                  Produk (Tidak dapat diubah)
+                <label className="block text-xs font-medium text-rakta-navy mb-1">
+                  Produk
                 </label>
-                <div className="w-full px-3.5 py-2 text-xs rounded-xl bg-rakta-surface border border-rakta-subtle text-rakta-navy font-medium">
+                <div className="w-full px-3.5 py-2 text-xs rounded-xl bg-rakta-surface border border-rakta-border text-rakta-navy font-medium">
                   {selectedTrxForEdit.single_product_nama ||
                     (selectedTrxForEdit.items && selectedTrxForEdit.items[0]?.product_nama) ||
                     "-"}
@@ -1204,7 +1175,7 @@ export default function TransactionManager({
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div>
-                  <label className="block text-xs font-semibold text-rakta-navy mb-1">
+                  <label className="block text-xs font-medium text-rakta-navy mb-1">
                     Kuantitas Keluar <span className="text-rose-500">*</span>
                   </label>
                   <input
@@ -1217,12 +1188,12 @@ export default function TransactionManager({
                       1
                     }
                     required
-                    className="w-full px-3.5 py-2 text-xs rounded-xl bg-rakta-card border border-rakta-subtle text-rakta-navy focus:outline-none focus:border-rakta-primary focus:ring-2 focus:ring-rakta-primary/20 transition-all"
+                    className="w-full px-3.5 py-2 text-xs rounded-xl bg-white border border-rakta-border text-rakta-navy focus:outline-none focus:border-rakta-primary focus:ring-1 focus:ring-rakta-primary/20 transition-all font-mono tabular-nums"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-rakta-navy mb-1">
+                  <label className="block text-xs font-medium text-rakta-navy mb-1">
                     Nama Tujuan / Customer <span className="text-rose-500">*</span>
                   </label>
                   <input
@@ -1231,13 +1202,13 @@ export default function TransactionManager({
                     defaultValue={selectedTrxForEdit.tujuan_customer || ""}
                     required
                     placeholder="Contoh: Toko Elektronik Jaya"
-                    className="w-full px-3.5 py-2 text-xs rounded-xl bg-rakta-card border border-rakta-subtle text-rakta-navy focus:outline-none focus:border-rakta-primary focus:ring-2 focus:ring-rakta-primary/20 transition-all"
+                    className="w-full px-3.5 py-2 text-xs rounded-xl bg-white border border-rakta-border text-rakta-navy focus:outline-none focus:border-rakta-primary focus:ring-1 focus:ring-rakta-primary/20 transition-all"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-rakta-navy mb-1">
+                <label className="block text-xs font-medium text-rakta-navy mb-1">
                   Catatan / Keterangan Pengeluaran
                 </label>
                 <textarea
@@ -1245,26 +1216,27 @@ export default function TransactionManager({
                   rows={2}
                   defaultValue={selectedTrxForEdit.catatan || selectedTrxForEdit.notes || ""}
                   placeholder="Keterangan pengiriman barang..."
-                  className="w-full px-3.5 py-2 text-xs rounded-xl bg-rakta-card border border-rakta-subtle text-rakta-navy placeholder:text-rakta-muted/60 focus:outline-none focus:border-rakta-primary focus:ring-2 focus:ring-rakta-primary/20 transition-all resize-none"
+                  className="w-full px-3.5 py-2 text-xs rounded-xl bg-white border border-rakta-border text-rakta-navy placeholder:text-rakta-muted/60 focus:outline-none focus:border-rakta-primary focus:ring-1 focus:ring-rakta-primary/20 transition-all resize-none"
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-rakta-subtle/60">
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-rakta-border/60">
                 <Button
                   type="button"
-                  variant="secondary"
+                  variant="ghost"
                   onClick={() => {
                     setModalMode(null);
                     setSelectedTrxForEdit(null);
                   }}
                   disabled={isEditOutProgress}
+                  className="text-xs"
                 >
                   Batal
                 </Button>
                 <Button
                   type="submit"
                   disabled={isEditOutProgress}
-                  className="bg-rakta-primary hover:bg-rakta-navy text-white"
+                  className="bg-rakta-primary hover:bg-rakta-primary-hover text-white text-xs"
                 >
                   {isEditOutProgress ? "Menyimpan..." : "Simpan Perubahan"}
                 </Button>
@@ -1300,10 +1272,10 @@ export default function TransactionManager({
         }
         message={
           confirmDialog?.type === "approve_in"
-            ? `Setujui dokumen barang masuk ${confirmDialog?.trx?.nomor_transaksi}?\n\nStok produk di sistem akan bertambah secara atomik.`
+            ? `Setujui dokumen barang masuk ${confirmDialog?.trx?.nomor_transaksi}? Stok produk di sistem akan bertambah secara atomik.`
             : confirmDialog?.type === "approve_out"
-            ? `Setujui pengajuan barang keluar ${confirmDialog?.trx?.nomor_transaksi}?\n\nStatus akan berubah menjadi Disetujui (Packing). Stok fisik belum berkurang hingga Staff Gudang menekan tombol Kirim Barang.`
-            : `Kirim barang untuk transaksi ${confirmDialog?.trx?.nomor_transaksi}?\n\nPengemasan selesai. Stok produk akan berkurang secara atomik dan status transaksi menjadi Selesai (Completed).`
+            ? `Setujui pengajuan barang keluar ${confirmDialog?.trx?.nomor_transaksi}? Status akan berubah menjadi Disetujui (Packing). Stok fisik belum berkurang hingga Staff Gudang menekan tombol Kirim Barang.`
+            : `Kirim barang untuk transaksi ${confirmDialog?.trx?.nomor_transaksi}? Pengemasan selesai. Stok produk akan berkurang secara atomik dan status transaksi menjadi Selesai (Completed).`
         }
         confirmText={
           confirmDialog?.type === "approve_in"

@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import QRCode from "qrcode";
 import Button from "@/components/ui/Button";
-import { QrCode, Download, Printer, Check, Copy } from "lucide-react";
+import { Download, Printer, Check, Copy } from "lucide-react";
 
 export default function ProductQrCard({ product }) {
   const canvasRef = useRef(null);
@@ -73,7 +73,7 @@ export default function ProductQrCard({ product }) {
     ctx.fillRect(0, 0, width, height);
 
     // Bingkai luar halus
-    ctx.strokeStyle = "#B9D8F5";
+    ctx.strokeStyle = "#D5E6F7";
     ctx.lineWidth = 4;
     ctx.strokeRect(8, 8, width - 16, height - 16);
 
@@ -94,7 +94,7 @@ export default function ProductQrCard({ product }) {
     ctx.font = "bold 24px monospace";
     ctx.fillText(product.sku, width / 2, 345);
 
-    // Nama Produk (Dibatasi agar tidak melebihi lebar kartu)
+    // Nama Produk
     ctx.fillStyle = "#55718D";
     ctx.font = "600 14px sans-serif";
     const namaProduk =
@@ -135,31 +135,28 @@ export default function ProductQrCard({ product }) {
   return (
     <>
       {/* Tampilan Kartu di Layar */}
-      <div className="bg-rakta-card border border-rakta-subtle/70 rounded-2xl p-5 rakta-card-shadow flex flex-col items-center text-center">
+      <div className="bg-white border border-rakta-border rounded-2xl p-5 rakta-card-shadow flex flex-col items-center text-center">
         {/* Header Kartu */}
-        <div className="w-full flex items-center justify-between pb-3.5 border-b border-rakta-subtle/60">
-          <div className="flex items-center gap-2">
-            <QrCode className="w-4 h-4 text-rakta-primary" />
-            <h3 className="text-sm font-bold text-rakta-navy">QR Code SKU Produk</h3>
-          </div>
-          <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-rakta-surface text-rakta-navy border border-rakta-subtle/60">
+        <div className="w-full flex items-center justify-between pb-3.5 border-b border-rakta-border">
+          <h3 className="text-sm font-bold text-rakta-navy">QR Code SKU Produk</h3>
+          <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-md bg-rakta-surface text-rakta-navy border border-rakta-border">
             Format Standar
           </span>
         </div>
 
         {/* Area Tampilan Canvas QR Code */}
-        <div className="my-5 p-4 bg-rakta-surface/60 border border-rakta-subtle/80 rounded-2xl flex flex-col items-center">
+        <div className="my-5 p-4 bg-rakta-surface border border-rakta-border rounded-2xl flex flex-col items-center">
           <canvas
             ref={canvasRef}
             className="w-44 h-44 rounded-xl bg-white shadow-xs p-1"
           />
           <div className="mt-3 flex items-center gap-2">
-            <span className="font-mono text-xs font-bold text-rakta-navy bg-rakta-card px-2.5 py-1 rounded-md border border-rakta-subtle">
+            <span className="font-mono text-xs font-bold text-rakta-navy bg-white px-2.5 py-1 rounded-md border border-rakta-border">
               {product.sku}
             </span>
             <button
               onClick={handleCopySku}
-              className="p-1 text-rakta-muted hover:text-rakta-navy rounded-md hover:bg-rakta-card transition-colors"
+              className="p-1 text-rakta-muted hover:text-rakta-navy rounded-md hover:bg-white transition-colors cursor-pointer"
               title="Salin SKU"
             >
               {copied ? (
@@ -174,12 +171,12 @@ export default function ProductQrCard({ product }) {
           </p>
         </div>
 
-        {/* Dua Tombol Aksi Kapsul (rounded-full) */}
+        {/* Dua Tombol Aksi (rounded-xl) */}
         <div className="w-full flex flex-col sm:flex-row items-center gap-2.5">
           <Button
             onClick={handleDownloadPng}
             disabled={!qrReady}
-            className="w-full sm:flex-1 rounded-full bg-rakta-primary hover:bg-rakta-navy text-white text-xs font-semibold py-2 px-4 flex items-center justify-center gap-1.5 shadow-sm transition-all"
+            className="w-full sm:flex-1 rounded-xl bg-rakta-primary hover:bg-rakta-primary-hover text-white text-xs font-semibold py-2 px-4 flex items-center justify-center gap-1.5 shadow-xs transition-all cursor-pointer"
           >
             <Download className="w-3.5 h-3.5" />
             <span>Unduh PNG</span>
@@ -189,7 +186,7 @@ export default function ProductQrCard({ product }) {
             onClick={handlePrintLabel}
             variant="outline"
             disabled={!qrReady}
-            className="w-full sm:flex-1 rounded-full bg-rakta-card hover:bg-rakta-surface border border-rakta-subtle text-rakta-navy text-xs font-semibold py-2 px-4 flex items-center justify-center gap-1.5 transition-all shadow-none"
+            className="w-full sm:flex-1 rounded-xl bg-white hover:bg-rakta-surface border border-rakta-border text-rakta-navy text-xs font-semibold py-2 px-4 flex items-center justify-center gap-1.5 transition-all shadow-none cursor-pointer"
           >
             <Printer className="w-3.5 h-3.5" />
             <span>Cetak Label</span>
@@ -197,7 +194,7 @@ export default function ProductQrCard({ product }) {
         </div>
       </div>
 
-      {/* Area Label Rak Khusus Media Cetak (Disembunyikan di layar, tampil rapi saat cetak) */}
+      {/* Area Label Rak Khusus Media Cetak */}
       <div id="printable-sku-label" className="hidden">
         <div className="label-container">
           <div className="label-header">RAKTA WAREHOUSE LABEL</div>
@@ -217,12 +214,10 @@ export default function ProductQrCard({ product }) {
       {/* Aturan CSS Cetak Khusus (@media print) */}
       <style jsx global>{`
         @media print {
-          /* Sembunyikan seluruh elemen halaman */
           body * {
             visibility: hidden !important;
           }
 
-          /* Tampilkan hanya wadah label rak */
           #printable-sku-label,
           #printable-sku-label * {
             visibility: visible !important;

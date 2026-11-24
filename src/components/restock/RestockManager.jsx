@@ -23,12 +23,10 @@ import {
   XCircle,
   AlertCircle,
   Clock,
-  Package,
   Search,
   X,
   Building2,
   Calendar,
-  Send,
   Loader2,
   Info,
   ShieldAlert,
@@ -46,7 +44,7 @@ export default function RestockManager({
 }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [modalMode, setModalMode] = useState(null); // 'create' | 'reject' | 'ship' | null
+  const [modalMode, setModalMode] = useState(null); // 'create' | 'reject' | 'ship' | 'inspect' | 'refund' | null
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [feedback, setFeedback] = useState(null);
   const [isPendingAction, startTransition] = useTransition();
@@ -176,11 +174,6 @@ export default function RestockManager({
     setConfirmDialog({ type: "cancel", order });
   };
 
-  // Handler bagi Warehouse Manager untuk menandai barang tiba di gudang
-  const handleMarkReceived = (order) => {
-    setConfirmDialog({ type: "received", order });
-  };
-
   // Handler eksekusi konfirmasi modal
   const handleExecuteConfirmDialog = () => {
     if (!confirmDialog) return;
@@ -220,49 +213,49 @@ export default function RestockManager({
         return {
           label: "Menunggu Konfirmasi",
           classes: "bg-amber-50 text-amber-700 border-amber-200/80",
-          icon: Clock,
+          dot: "bg-amber-500",
         };
       case "confirmed":
         return {
-          label: "Dikonfirmasi / Diproses",
-          classes: "bg-blue-50 text-blue-700 border-blue-200/80",
-          icon: CheckCircle2,
+          label: "Dikonfirmasi",
+          classes: "bg-rakta-bg/70 text-rakta-navy border-rakta-border",
+          dot: "bg-rakta-primary",
         };
       case "in_transit":
         return {
           label: "Dalam Pengiriman",
           classes: "bg-purple-50 text-purple-700 border-purple-200/80",
-          icon: Truck,
+          dot: "bg-purple-500",
         };
       case "inspecting":
         return {
-          label: "Pemeriksaan Fisik (Inspecting)",
-          classes: "bg-amber-50 text-amber-700 border-amber-200/80",
-          icon: Clock,
+          label: "Pemeriksaan Fisik",
+          classes: "bg-amber-50 text-amber-800 border-amber-200/80",
+          dot: "bg-amber-500",
         };
       case "received":
         return {
           label: "Selesai Diterima",
           classes: "bg-emerald-50 text-emerald-700 border-emerald-200/80",
-          icon: CheckCircle2,
+          dot: "bg-emerald-500",
         };
       case "returned":
         return {
-          label: "Diretur / Klaim Refund",
+          label: "Diretur",
           classes: "bg-rose-50 text-rose-700 border-rose-200/80",
-          icon: XCircle,
+          dot: "bg-rose-500",
         };
       case "rejected":
         return {
-          label: "Dibatalkan / Ditolak",
+          label: "Dibatalkan",
           classes: "bg-rose-50 text-rose-700 border-rose-200/80",
-          icon: XCircle,
+          dot: "bg-rose-500",
         };
       default:
         return {
           label: status,
-          classes: "bg-rakta-surface text-rakta-navy border-rakta-subtle",
-          icon: Info,
+          classes: "bg-rakta-surface text-rakta-navy border-rakta-border",
+          dot: "bg-rakta-muted",
         };
     }
   };
@@ -272,10 +265,10 @@ export default function RestockManager({
       {/* Notifikasi Umpan Balik */}
       {feedback && (
         <div
-          className={`p-4 rounded-2xl flex items-start justify-between gap-3 border ${
+          className={`p-4 rounded-xl flex items-start justify-between gap-3 border ${
             feedback.type === "success"
-              ? "bg-emerald-50/80 border-emerald-200 text-emerald-800"
-              : "bg-rose-50/80 border-rose-200 text-rose-800"
+              ? "bg-emerald-50/90 border-emerald-200 text-emerald-800"
+              : "bg-rose-50/90 border-rose-200 text-rose-800"
           }`}
         >
           <div className="flex items-start gap-2.5">
@@ -297,16 +290,16 @@ export default function RestockManager({
       )}
 
       {/* Bilah Alat & Filter (Toolbar) */}
-      <div className="bg-rakta-card border border-rakta-subtle/70 rounded-2xl p-4 md:p-5 rakta-card-shadow flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+      <div className="bg-white border border-rakta-border rounded-2xl p-4 md:p-5 rakta-card-shadow flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         {/* Kolom Kiri: Input Pencarian */}
-        <div className="relative flex-1 min-w-55">
+        <div className="relative flex-1 min-w-60">
           <Search className="w-4 h-4 text-rakta-muted absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input
             type="text"
             placeholder="Cari nomor PO, nama produk, SKU, atau supplier..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 text-sm rounded-xl bg-rakta-card border border-rakta-subtle text-rakta-navy placeholder:text-rakta-muted/60 focus:outline-none focus:border-rakta-primary focus:ring-2 focus:ring-rakta-primary/20 transition-all"
+            className="w-full pl-9 pr-8 py-2 text-sm rounded-xl bg-white border border-rakta-border text-rakta-navy placeholder:text-rakta-muted/60 focus:outline-none focus:border-rakta-primary focus:ring-2 focus:ring-rakta-primary/20 transition-all"
           />
           {searchQuery && (
             <button
@@ -318,15 +311,15 @@ export default function RestockManager({
           )}
         </div>
 
-        {/* Kolom Kanan: Filter Status Kapsul & Tombol Buat PO */}
+        {/* Kolom Kanan: Filter Status & Tombol Aksi */}
         <div className="flex flex-wrap items-center gap-3">
           {/* Tab Filter Status */}
-          <div className="inline-flex p-1 bg-rakta-surface border border-rakta-subtle/80 rounded-full overflow-x-auto">
+          <div className="inline-flex p-1 bg-rakta-surface border border-rakta-border rounded-xl overflow-x-auto">
             <button
               onClick={() => setStatusFilter("all")}
-              className={`px-3 py-1 text-xs font-semibold rounded-full transition-all ${
+              className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
                 statusFilter === "all"
-                  ? "bg-rakta-card text-rakta-navy shadow-xs"
+                  ? "bg-rakta-bg/80 text-rakta-navy shadow-xs"
                   : "text-rakta-muted hover:text-rakta-navy"
               }`}
             >
@@ -334,9 +327,9 @@ export default function RestockManager({
             </button>
             <button
               onClick={() => setStatusFilter("pending")}
-              className={`px-3 py-1 text-xs font-semibold rounded-full transition-all ${
+              className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
                 statusFilter === "pending"
-                  ? "bg-amber-50 text-amber-700 shadow-xs border border-amber-200/60"
+                  ? "bg-amber-100/80 text-amber-900 shadow-xs"
                   : "text-rakta-muted hover:text-rakta-navy"
               }`}
             >
@@ -344,9 +337,9 @@ export default function RestockManager({
             </button>
             <button
               onClick={() => setStatusFilter("confirmed")}
-              className={`px-3 py-1 text-xs font-semibold rounded-full transition-all ${
+              className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
                 statusFilter === "confirmed"
-                  ? "bg-blue-50 text-blue-700 shadow-xs border border-blue-200/60"
+                  ? "bg-rakta-bg/90 text-rakta-navy shadow-xs"
                   : "text-rakta-muted hover:text-rakta-navy"
               }`}
             >
@@ -354,9 +347,9 @@ export default function RestockManager({
             </button>
             <button
               onClick={() => setStatusFilter("in_transit")}
-              className={`px-3 py-1 text-xs font-semibold rounded-full transition-all ${
+              className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
                 statusFilter === "in_transit"
-                  ? "bg-purple-50 text-purple-700 shadow-xs border border-purple-200/60"
+                  ? "bg-purple-100/80 text-purple-900 shadow-xs"
                   : "text-rakta-muted hover:text-rakta-navy"
               }`}
             >
@@ -364,9 +357,9 @@ export default function RestockManager({
             </button>
             <button
               onClick={() => setStatusFilter("inspecting")}
-              className={`px-3 py-1 text-xs font-semibold rounded-full transition-all ${
+              className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
                 statusFilter === "inspecting"
-                  ? "bg-amber-50 text-amber-700 shadow-xs border border-amber-200/60"
+                  ? "bg-amber-100/80 text-amber-900 shadow-xs"
                   : "text-rakta-muted hover:text-rakta-navy"
               }`}
             >
@@ -374,9 +367,9 @@ export default function RestockManager({
             </button>
             <button
               onClick={() => setStatusFilter("received")}
-              className={`px-3 py-1 text-xs font-semibold rounded-full transition-all ${
+              className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
                 statusFilter === "received"
-                  ? "bg-emerald-50 text-emerald-700 shadow-xs border border-emerald-200/60"
+                  ? "bg-emerald-100/80 text-emerald-900 shadow-xs"
                   : "text-rakta-muted hover:text-rakta-navy"
               }`}
             >
@@ -384,9 +377,9 @@ export default function RestockManager({
             </button>
             <button
               onClick={() => setStatusFilter("returned")}
-              className={`px-3 py-1 text-xs font-semibold rounded-full transition-all ${
+              className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
                 statusFilter === "returned"
-                  ? "bg-rose-50 text-rose-700 shadow-xs border border-rose-200/60"
+                  ? "bg-rose-100/80 text-rose-900 shadow-xs"
                   : "text-rakta-muted hover:text-rakta-navy"
               }`}
             >
@@ -394,9 +387,9 @@ export default function RestockManager({
             </button>
             <button
               onClick={() => setStatusFilter("rejected")}
-              className={`px-3 py-1 text-xs font-semibold rounded-full transition-all ${
+              className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
                 statusFilter === "rejected"
-                  ? "bg-rose-50 text-rose-700 shadow-xs border border-rose-200/60"
+                  ? "bg-rose-100/80 text-rose-900 shadow-xs"
                   : "text-rakta-muted hover:text-rakta-navy"
               }`}
             >
@@ -408,9 +401,9 @@ export default function RestockManager({
           <Button
             onClick={handleExportCsv}
             variant="outline"
-            className="rounded-full bg-rakta-card border border-rakta-subtle text-rakta-navy hover:bg-rakta-surface text-xs font-semibold px-4 py-2 flex items-center gap-1.5 shadow-none transition-all cursor-pointer"
+            className="rounded-xl border-rakta-border text-rakta-navy hover:bg-rakta-surface text-xs font-semibold px-3.5 py-2 flex items-center gap-1.5 cursor-pointer"
           >
-            <Download className="w-4 h-4" />
+            <Download className="w-4 h-4 text-rakta-muted" />
             <span>Ekspor CSV</span>
           </Button>
 
@@ -418,7 +411,7 @@ export default function RestockManager({
           {(userRole === "warehouse_manager" || userRole === "admin") && (
             <Button
               onClick={() => setModalMode("create")}
-              className="rounded-full bg-rakta-primary hover:bg-rakta-navy text-white text-xs font-semibold px-4 py-2 flex items-center gap-1.5 shadow-xs transition-all"
+              className="rounded-xl bg-rakta-primary hover:bg-rakta-primary-hover text-white text-xs font-semibold px-4 py-2 flex items-center gap-1.5 cursor-pointer shadow-xs"
             >
               <Plus className="w-4 h-4" />
               <span>Buat Pesanan Restock</span>
@@ -428,23 +421,23 @@ export default function RestockManager({
       </div>
 
       {/* Tabel Daftar Pesanan Restock */}
-      <div className="bg-rakta-card border border-rakta-subtle/70 rounded-2xl rakta-card-shadow overflow-hidden">
+      <div className="bg-white border border-rakta-border rounded-2xl rakta-card-shadow overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm border-collapse">
             <thead>
-              <tr className="border-b border-rakta-subtle/60 bg-rakta-surface/70 text-xs font-semibold text-rakta-muted uppercase tracking-wider">
-                <th className="px-5 py-3.5">Nomor PO &amp; Tanggal</th>
-                <th className="px-5 py-3.5">Mitra Supplier</th>
-                <th className="px-5 py-3.5">Barang &amp; Kuantitas</th>
-                <th className="px-5 py-3.5">Status &amp; Keterangan</th>
+              <tr className="border-b border-rakta-border bg-rakta-surface/80 text-xs font-semibold text-rakta-muted">
+                <th className="px-5 py-3.5">Nomor PO &amp; tanggal</th>
+                <th className="px-5 py-3.5">Mitra supplier</th>
+                <th className="px-5 py-3.5">Barang &amp; kuantitas</th>
+                <th className="px-5 py-3.5">Status &amp; keterangan</th>
                 <th className="px-5 py-3.5 text-right">Aksi</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-rakta-subtle/40">
+            <tbody className="divide-y divide-rakta-border/40">
               {filteredOrders.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="px-5 py-12 text-center text-rakta-muted">
-                    <Truck className="w-10 h-10 mx-auto mb-2 text-rakta-muted/50" />
+                    <Truck className="w-10 h-10 mx-auto mb-2 text-rakta-muted/40" />
                     <p className="font-semibold text-rakta-navy text-base">
                       Tidak ada pesanan restock ditemukan
                     </p>
@@ -456,27 +449,26 @@ export default function RestockManager({
               ) : (
                 filteredOrders.map((order) => {
                   const badge = getStatusBadge(order.status);
-                  const BadgeIcon = badge.icon;
                   const isProcessing = isPendingAction && activeActionId === order.id;
 
                   return (
                     <tr
                       key={order.id}
-                      className="hover:bg-rakta-surface/40 transition-colors group text-rakta-navy"
+                      className="hover:bg-rakta-surface/50 transition-colors group text-rakta-navy"
                     >
                       {/* Nomor PO & Tanggal */}
                       <td className="px-5 py-4">
                         <div className="space-y-1">
-                          <span className="font-mono text-xs font-bold px-2 py-0.5 rounded-md bg-rakta-subtle/40 text-rakta-navy border border-rakta-subtle/70">
+                          <span className="font-mono text-xs font-semibold px-2 py-0.5 rounded-md bg-rakta-surface text-rakta-navy border border-rakta-border">
                             {order.nomor_po}
                           </span>
                           <div className="text-xs text-rakta-muted flex items-center gap-1">
-                            <Calendar className="w-3 h-3 text-rakta-primary shrink-0" />
-                            <span>{formatTanggal(order.tanggal_order)}</span>
+                            <Calendar className="w-3.5 h-3.5 text-rakta-primary shrink-0" />
+                            <span className="font-mono tabular-nums">{formatTanggal(order.tanggal_order)}</span>
                           </div>
                           {order.estimasi_tiba && (
                             <p className="text-[11px] text-rakta-muted">
-                              Est. Tiba: {formatTanggal(order.estimasi_tiba)}
+                              Est. Tiba: <span className="font-mono tabular-nums">{formatTanggal(order.estimasi_tiba)}</span>
                             </p>
                           )}
                         </div>
@@ -500,10 +492,10 @@ export default function RestockManager({
                         <div className="space-y-1">
                           {order.items?.map((it, idx) => (
                             <div key={idx} className="flex items-center gap-2 text-xs">
-                              <span className="font-semibold text-rakta-navy">
+                              <span className="font-medium text-rakta-navy">
                                 {it.product_nama}
                               </span>
-                              <span className="font-bold px-2 py-0.5 rounded-full bg-rakta-surface border border-rakta-subtle text-rakta-primary text-[11px]">
+                              <span className="font-mono tabular-nums font-semibold px-2 py-0.5 rounded-lg bg-rakta-surface border border-rakta-border text-rakta-navy text-[11px]">
                                 {it.qty} {it.unit}
                               </span>
                             </div>
@@ -520,13 +512,13 @@ export default function RestockManager({
                       <td className="px-5 py-4">
                         <div className="space-y-1">
                           <span
-                            className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-0.5 rounded-full border ${badge.classes}`}
+                            className={`inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-0.5 rounded-full border ${badge.classes}`}
                           >
-                            <BadgeIcon className="w-3 h-3 shrink-0" />
+                            <span className={`w-1.5 h-1.5 rounded-full ${badge.dot}`} />
                             <span>{badge.label}</span>
                           </span>
                           {order.nomor_resi && (
-                            <div className="text-[11px] font-mono text-rakta-navy">
+                            <div className="text-[11px] font-mono tabular-nums text-rakta-navy">
                               Resi: <span className="font-semibold">{order.nomor_resi}</span>
                             </div>
                           )}
@@ -566,7 +558,7 @@ export default function RestockManager({
                                 <button
                                   onClick={() => handleConfirmOrder(order)}
                                   disabled={isProcessing}
-                                  className="px-3 py-1.5 text-xs font-semibold rounded-full bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1 shadow-2xs transition-colors disabled:opacity-50"
+                                  className="px-3 py-1.5 text-xs font-semibold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1 shadow-xs transition-colors disabled:opacity-50 cursor-pointer"
                                 >
                                   {isProcessing ? (
                                     <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -581,7 +573,7 @@ export default function RestockManager({
                                     setModalMode("reject");
                                   }}
                                   disabled={isProcessing}
-                                  className="px-3 py-1.5 text-xs font-semibold rounded-full bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 flex items-center gap-1 transition-colors"
+                                  className="px-3 py-1.5 text-xs font-semibold rounded-xl bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 flex items-center gap-1 transition-colors cursor-pointer"
                                 >
                                   <XCircle className="w-3.5 h-3.5" />
                                   <span>Tolak</span>
@@ -595,7 +587,7 @@ export default function RestockManager({
                                   setSelectedOrder(order);
                                   setModalMode("ship");
                                 }}
-                                className="px-3.5 py-1.5 text-xs font-semibold rounded-full bg-rakta-primary hover:bg-rakta-navy text-white flex items-center gap-1.5 shadow-2xs transition-colors"
+                                className="px-3.5 py-1.5 text-xs font-semibold rounded-xl bg-rakta-primary hover:bg-rakta-primary-hover text-white flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
                               >
                                 <Truck className="w-3.5 h-3.5" />
                                 <span>Proses &amp; Kirim</span>
@@ -610,14 +602,14 @@ export default function RestockManager({
                               <div className="flex items-center gap-1.5">
                                 {order.rating && (
                                   <span
-                                    className="inline-flex items-center gap-1 text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-full"
+                                    className="inline-flex items-center gap-1 text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-xl"
                                     title={order.review_note ? `Ulasan: "${order.review_note}"` : "Rating pesanan"}
                                   >
                                     <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-500" />
-                                    <span>{order.rating} / 5</span>
+                                    <span className="font-mono tabular-nums">{order.rating} / 5</span>
                                   </span>
                                 )}
-                                <span className="text-xs text-rakta-muted font-medium bg-rakta-surface px-2.5 py-1 rounded-full border border-rakta-subtle/60">
+                                <span className="text-xs text-rakta-muted font-medium bg-rakta-surface px-2.5 py-1 rounded-xl border border-rakta-border">
                                   {order.status === "returned" ? "Diretur" : "Selesai"}
                                 </span>
                               </div>
@@ -625,14 +617,14 @@ export default function RestockManager({
                           </div>
                         )}
 
-                        {/* Aksi Khusus Warehouse Manager */}
+                        {/* Aksi Khusus Warehouse Manager & Admin */}
                         {(userRole === "warehouse_manager" || userRole === "admin") && (
                           <div className="flex items-center justify-end gap-2">
                             {order.status === "pending" && (
                               <button
                                 onClick={() => handleCancelOrder(order)}
                                 disabled={isProcessing}
-                                className="px-3 py-1 text-xs font-medium text-rose-600 hover:text-rose-800 hover:bg-rose-50 rounded-full border border-rose-200 transition-colors disabled:opacity-50 cursor-pointer"
+                                className="px-3 py-1.5 text-xs font-medium text-rose-600 hover:text-rose-800 hover:bg-rose-50 rounded-xl border border-rose-200 transition-colors disabled:opacity-50 cursor-pointer"
                               >
                                 {isProcessing ? "Membatalkan..." : "Batalkan Pesanan"}
                               </button>
@@ -645,7 +637,7 @@ export default function RestockManager({
                                   setModalMode("inspect");
                                 }}
                                 disabled={isProcessing}
-                                className="px-3.5 py-1.5 text-xs font-semibold rounded-full bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200 flex items-center gap-1.5 transition-colors disabled:opacity-50 cursor-pointer shadow-2xs"
+                                className="px-3.5 py-1.5 text-xs font-semibold rounded-xl bg-amber-50 text-amber-800 hover:bg-amber-100 border border-amber-200 flex items-center gap-1.5 transition-colors disabled:opacity-50 cursor-pointer shadow-xs"
                               >
                                 <CheckCircle2 className="w-3.5 h-3.5" />
                                 <span>Tandai Tiba &amp; Cek Fisik</span>
@@ -653,7 +645,7 @@ export default function RestockManager({
                             )}
 
                             {order.status === "inspecting" && (
-                              <span className="text-xs text-amber-700 font-semibold bg-amber-50 px-2.5 py-1 rounded-full border border-amber-200">
+                              <span className="text-xs text-amber-800 font-semibold bg-amber-50 px-2.5 py-1 rounded-xl border border-amber-200">
                                 Pemeriksaan Fisik Staff
                               </span>
                             )}
@@ -662,11 +654,11 @@ export default function RestockManager({
                               <div className="flex items-center gap-1.5">
                                 {order.rating ? (
                                   <div
-                                    className="inline-flex items-center gap-1 text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-full"
+                                    className="inline-flex items-center gap-1 text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-xl"
                                     title={order.review_note ? `Ulasan: "${order.review_note}"` : "Rating tersimpan"}
                                   >
                                     <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-500" />
-                                    <span>{order.rating} / 5</span>
+                                    <span className="font-mono tabular-nums">{order.rating} / 5</span>
                                   </div>
                                 ) : (
                                   <button
@@ -675,14 +667,14 @@ export default function RestockManager({
                                       setRatingScore(5);
                                       setRatingHover(0);
                                     }}
-                                    className="px-3 py-1 text-xs font-semibold rounded-full bg-amber-500 hover:bg-amber-600 text-white flex items-center gap-1 shadow-2xs transition-colors cursor-pointer"
-                                    title="Beri Rating Supplier untuk PO ini"
+                                    className="px-3 py-1.5 text-xs font-semibold rounded-xl bg-amber-500 hover:bg-amber-600 text-white flex items-center gap-1 shadow-xs transition-colors cursor-pointer"
+                                    title="Beri rating supplier untuk PO ini"
                                   >
                                     <Star className="w-3.5 h-3.5 fill-current" />
                                     <span>Beri Rating</span>
                                   </button>
                                 )}
-                                <span className="text-xs text-emerald-700 font-semibold bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
+                                <span className="text-xs text-emerald-700 font-semibold bg-emerald-50 px-2.5 py-1 rounded-xl border border-emerald-200">
                                   Barang Tiba
                                 </span>
                               </div>
@@ -696,14 +688,14 @@ export default function RestockManager({
                                       setSelectedOrder(order);
                                       setModalMode("refund");
                                     }}
-                                    className="px-3 py-1 text-xs font-semibold rounded-full bg-rose-600 hover:bg-rose-700 text-white flex items-center gap-1 shadow-2xs transition-colors cursor-pointer"
-                                    title="Ajukan Klaim Refund ke Supplier"
+                                    className="px-3 py-1.5 text-xs font-semibold rounded-xl bg-rose-600 hover:bg-rose-700 text-white flex items-center gap-1 shadow-xs transition-colors cursor-pointer"
+                                    title="Ajukan klaim refund ke supplier"
                                   >
                                     <ShieldAlert className="w-3.5 h-3.5" />
                                     <span>Klaim Refund</span>
                                   </button>
                                 ) : (
-                                  <span className="text-xs text-rose-700 font-semibold bg-rose-50 px-2.5 py-1 rounded-full border border-rose-200">
+                                  <span className="text-xs text-rose-700 font-semibold bg-rose-50 px-2.5 py-1 rounded-xl border border-rose-200">
                                     Refund Diajukan
                                   </span>
                                 )}
@@ -711,7 +703,7 @@ export default function RestockManager({
                             )}
 
                             {(order.status === "confirmed" || order.status === "rejected") && (
-                              <span className="text-xs text-rakta-muted font-medium bg-rakta-surface px-2.5 py-1 rounded-full border border-rakta-subtle/60">
+                              <span className="text-xs text-rakta-muted font-medium bg-rakta-surface px-2.5 py-1 rounded-xl border border-rakta-border">
                                 {order.status === "confirmed" ? "Sedang Disiapkan Supplier" : "Dibatalkan"}
                               </span>
                             )}
@@ -722,23 +714,23 @@ export default function RestockManager({
                         {userRole === "staff_gudang" && (
                           <div className="text-right">
                             {order.status === "inspecting" ? (
-                              <span className="text-xs font-semibold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-200">
+                              <span className="text-xs font-semibold text-amber-800 bg-amber-50 px-2.5 py-1 rounded-xl border border-amber-200">
                                 Perlu Cek Fisik (Transaksi)
                               </span>
                             ) : order.status === "received" ? (
-                              <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
+                              <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-xl border border-emerald-200">
                                 Selesai Diterima
                               </span>
                             ) : order.status === "returned" ? (
-                              <span className="text-xs font-semibold text-rose-700 bg-rose-50 px-2.5 py-1 rounded-full border border-rose-200">
+                              <span className="text-xs font-semibold text-rose-700 bg-rose-50 px-2.5 py-1 rounded-xl border border-rose-200">
                                 Diretur
                               </span>
                             ) : order.status === "in_transit" ? (
-                              <span className="text-xs font-semibold text-purple-700 bg-purple-50 px-2.5 py-1 rounded-full border border-purple-200">
+                              <span className="text-xs font-semibold text-purple-700 bg-purple-50 px-2.5 py-1 rounded-xl border border-purple-200">
                                 Dalam Pengiriman
                               </span>
                             ) : (
-                              <span className="text-xs text-rakta-muted font-medium bg-rakta-surface px-2.5 py-1 rounded-full border border-rakta-subtle/60">
+                              <span className="text-xs text-rakta-muted font-medium bg-rakta-surface px-2.5 py-1 rounded-xl border border-rakta-border">
                                 Mode Pantau
                               </span>
                             )}
@@ -754,27 +746,22 @@ export default function RestockManager({
         </div>
       </div>
 
-      {/* MODAL: Buat Pesanan Restock Baru (Warehouse Manager)                       */}
+      {/* MODAL: Buat Pesanan Restock Baru (Warehouse Manager) */}
       {modalMode === "create" && (
         <div className="fixed inset-0 z-50 bg-rakta-navy/40 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-rakta-card border border-rakta-subtle/80 rounded-2xl w-full max-w-lg p-6 rakta-card-shadow relative my-8 animate-in fade-in zoom-in-95 duration-200">
-            <div className="flex items-center justify-between pb-4 border-b border-rakta-subtle/60">
-              <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-full bg-rakta-surface border border-rakta-subtle flex items-center justify-center text-rakta-primary">
-                  <Truck className="w-4 h-4" />
-                </div>
-                <div>
-                  <h3 className="text-base font-bold text-rakta-navy">
-                    Buat Pengajuan Restock (PO)
-                  </h3>
-                  <p className="text-xs text-rakta-muted">
-                    Kirim Purchase Order resmi ke mitra supplier terdaftar
-                  </p>
-                </div>
+          <div className="bg-white border border-rakta-border rounded-2xl w-full max-w-lg p-6 rakta-card-shadow relative my-8 animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between pb-4 border-b border-rakta-border">
+              <div>
+                <h3 className="text-base font-bold text-rakta-navy">
+                  Buat Pengajuan Restock (PO)
+                </h3>
+                <p className="text-xs text-rakta-muted mt-0.5">
+                  Kirim Purchase Order resmi ke mitra supplier terdaftar
+                </p>
               </div>
               <button
                 onClick={() => setModalMode(null)}
-                className="text-rakta-muted hover:text-rakta-navy p-1.5 rounded-full hover:bg-rakta-surface transition-colors"
+                className="text-rakta-muted hover:text-rakta-navy p-1.5 rounded-xl hover:bg-rakta-surface transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -796,7 +783,7 @@ export default function RestockManager({
                 <select
                   name="supplier_id"
                   required
-                  className="w-full px-3 py-2 text-sm rounded-xl bg-rakta-card border border-rakta-subtle text-rakta-navy focus:outline-none focus:border-rakta-primary focus:ring-2 focus:ring-rakta-primary/20"
+                  className="w-full px-3 py-2 text-sm rounded-xl bg-white border border-rakta-border text-rakta-navy focus:outline-none focus:border-rakta-primary focus:ring-2 focus:ring-rakta-primary/20"
                 >
                   <option value="">Pilih Mitra Supplier</option>
                   {suppliers.map((s) => (
@@ -817,7 +804,7 @@ export default function RestockManager({
                   <select
                     name="product_id"
                     required
-                    className="w-full px-3 py-2 text-sm rounded-xl bg-rakta-card border border-rakta-subtle text-rakta-navy focus:outline-none focus:border-rakta-primary focus:ring-2 focus:ring-rakta-primary/20"
+                    className="w-full px-3 py-2 text-sm rounded-xl bg-white border border-rakta-border text-rakta-navy focus:outline-none focus:border-rakta-primary focus:ring-2 focus:ring-rakta-primary/20"
                   >
                     <option value="">Pilih Produk</option>
                     {products.map((p) => (
@@ -837,7 +824,7 @@ export default function RestockManager({
                     min="1"
                     required
                     placeholder="10"
-                    className="w-full px-3 py-2 text-sm rounded-xl bg-rakta-card border border-rakta-subtle text-rakta-navy focus:outline-none focus:border-rakta-primary focus:ring-2 focus:ring-rakta-primary/20"
+                    className="w-full px-3 py-2 text-sm font-mono tabular-nums rounded-xl bg-white border border-rakta-border text-rakta-navy focus:outline-none focus:border-rakta-primary focus:ring-2 focus:ring-rakta-primary/20"
                   />
                 </div>
               </div>
@@ -850,7 +837,7 @@ export default function RestockManager({
                 <input
                   type="date"
                   name="estimasi_tiba"
-                  className="w-full px-3 py-2 text-sm rounded-xl bg-rakta-card border border-rakta-subtle text-rakta-navy focus:outline-none focus:border-rakta-primary focus:ring-2 focus:ring-rakta-primary/20"
+                  className="w-full px-3 py-2 text-sm rounded-xl bg-white border border-rakta-border text-rakta-navy focus:outline-none focus:border-rakta-primary focus:ring-2 focus:ring-rakta-primary/20"
                 />
               </div>
 
@@ -863,24 +850,24 @@ export default function RestockManager({
                   name="catatan"
                   rows={2}
                   placeholder="Contoh: Harap kemas dengan bubble wrap tebal dan sertakan packing slip..."
-                  className="w-full px-3 py-2 text-sm rounded-xl bg-rakta-card border border-rakta-subtle text-rakta-navy placeholder:text-rakta-muted/60 focus:outline-none focus:border-rakta-primary focus:ring-2 focus:ring-rakta-primary/20 resize-none"
+                  className="w-full px-3 py-2 text-sm rounded-xl bg-white border border-rakta-border text-rakta-navy placeholder:text-rakta-muted/60 focus:outline-none focus:border-rakta-primary focus:ring-2 focus:ring-rakta-primary/20 resize-none"
                 />
               </div>
 
               {/* Tombol Aksi */}
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-rakta-subtle/60">
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-rakta-border">
                 <Button
                   type="button"
                   variant="outline"
                   onClick={() => setModalMode(null)}
-                  className="rounded-full text-xs font-semibold px-4 py-2"
+                  className="rounded-xl text-xs font-semibold px-4 py-2 border-rakta-border text-rakta-navy hover:bg-rakta-surface"
                 >
                   Batal
                 </Button>
                 <Button
                   type="submit"
                   disabled={isCreating}
-                  className="rounded-full bg-rakta-primary hover:bg-rakta-navy text-white text-xs font-semibold px-5 py-2 flex items-center gap-1.5 shadow-xs"
+                  className="rounded-xl bg-rakta-primary hover:bg-rakta-primary-hover text-white text-xs font-semibold px-5 py-2 flex items-center gap-1.5 shadow-xs"
                 >
                   {isCreating && <Loader2 className="w-4 h-4 animate-spin" />}
                   <span>{isCreating ? "Mengajukan PO..." : "Kirim Pengajuan PO"}</span>
@@ -891,21 +878,21 @@ export default function RestockManager({
         </div>
       )}
 
-      {/* MODAL: Tolak Pesanan (Supplier)                                           */}
+      {/* MODAL: Tolak Pesanan (Supplier) */}
       {modalMode === "reject" && selectedOrder && (
         <div className="fixed inset-0 z-50 bg-rakta-navy/40 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-rakta-card border border-rakta-subtle/80 rounded-2xl w-full max-w-md p-6 rakta-card-shadow relative my-8 animate-in fade-in zoom-in-95 duration-200">
-            <div className="flex items-center justify-between pb-3 border-b border-rakta-subtle/60">
+          <div className="bg-white border border-rakta-border rounded-2xl w-full max-w-md p-6 rakta-card-shadow relative my-8 animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between pb-3 border-b border-rakta-border">
               <h3 className="text-base font-bold text-rose-700 flex items-center gap-2">
                 <ShieldAlert className="w-5 h-5 text-rose-600" />
-                Tolak Pesanan Restock
+                <span>Tolak Pesanan Restock</span>
               </h3>
               <button
                 onClick={() => {
                   setModalMode(null);
                   setSelectedOrder(null);
                 }}
-                className="text-rakta-muted hover:text-rakta-navy p-1 rounded-full hover:bg-rakta-surface transition-colors"
+                className="text-rakta-muted hover:text-rakta-navy p-1 rounded-xl hover:bg-rakta-surface transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -918,7 +905,7 @@ export default function RestockManager({
             )}
 
             <p className="text-xs text-rakta-muted mt-3">
-              Anda akan menolak pesanan <span className="font-bold text-rakta-navy">{selectedOrder.nomor_po}</span>. Berikan alasan penolakan agar tim gudang dapat mengetahui kendalanya.
+              Anda akan menolak pesanan <span className="font-bold text-rakta-navy font-mono">{selectedOrder.nomor_po}</span>. Berikan alasan penolakan agar tim gudang dapat mengetahui kendalanya.
             </p>
 
             <form action={rejectAction} className="mt-4 space-y-4">
@@ -933,11 +920,11 @@ export default function RestockManager({
                   rows={3}
                   required
                   placeholder="Contoh: Stok bahan baku sedang kosong di pabrik / Kapasitas produksi penuh hingga akhir bulan..."
-                  className="w-full px-3 py-2 text-sm rounded-xl bg-rakta-card border border-rakta-subtle text-rakta-navy placeholder:text-rakta-muted/60 focus:outline-none focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20 resize-none"
+                  className="w-full px-3 py-2 text-sm rounded-xl bg-white border border-rakta-border text-rakta-navy placeholder:text-rakta-muted/60 focus:outline-none focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20 resize-none"
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-rakta-subtle/60">
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-rakta-border">
                 <Button
                   type="button"
                   variant="outline"
@@ -945,14 +932,14 @@ export default function RestockManager({
                     setModalMode(null);
                     setSelectedOrder(null);
                   }}
-                  className="rounded-full text-xs font-semibold px-4 py-2"
+                  className="rounded-xl text-xs font-semibold px-4 py-2 border-rakta-border text-rakta-navy hover:bg-rakta-surface"
                 >
                   Batal
                 </Button>
                 <Button
                   type="submit"
                   disabled={isRejecting}
-                  className="rounded-full bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold px-5 py-2 flex items-center gap-1.5 shadow-xs"
+                  className="rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold px-5 py-2 flex items-center gap-1.5 shadow-xs"
                 >
                   {isRejecting && <Loader2 className="w-4 h-4 animate-spin" />}
                   <span>{isRejecting ? "Memproses..." : "Konfirmasi Penolakan"}</span>
@@ -963,25 +950,25 @@ export default function RestockManager({
         </div>
       )}
 
-      {/* MODAL: Proses & Kirim Barang (Supplier)                                   */}
+      {/* MODAL: Proses & Kirim Barang (Supplier) */}
       {modalMode === "ship" && selectedOrder && (
         <div className="fixed inset-0 z-50 bg-rakta-navy/40 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-rakta-card border border-rakta-subtle/80 rounded-2xl w-full max-w-md p-6 rakta-card-shadow relative my-8 animate-in fade-in zoom-in-95 duration-200">
-            <div className="flex items-center justify-between pb-3 border-b border-rakta-subtle/60">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-purple-50 text-purple-700 flex items-center justify-center">
-                  <Truck className="w-4 h-4" />
-                </div>
+          <div className="bg-white border border-rakta-border rounded-2xl w-full max-w-md p-6 rakta-card-shadow relative my-8 animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between pb-3 border-b border-rakta-border">
+              <div>
                 <h3 className="text-base font-bold text-rakta-navy">
                   Proses Pengiriman Barang
                 </h3>
+                <p className="text-xs text-rakta-muted mt-0.5">
+                  Perbarui status pengiriman pesanan restock
+                </p>
               </div>
               <button
                 onClick={() => {
                   setModalMode(null);
                   setSelectedOrder(null);
                 }}
-                className="text-rakta-muted hover:text-rakta-navy p-1 rounded-full hover:bg-rakta-surface transition-colors"
+                className="text-rakta-muted hover:text-rakta-navy p-1 rounded-xl hover:bg-rakta-surface transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -994,7 +981,7 @@ export default function RestockManager({
             )}
 
             <p className="text-xs text-rakta-muted mt-3">
-              Pesanan <span className="font-bold text-rakta-navy">{selectedOrder.nomor_po}</span> akan ditandai dalam perjalanan (In Transit). Masukkan nomor resi atau ekspedisi pengiriman.
+              Pesanan <span className="font-bold text-rakta-navy font-mono">{selectedOrder.nomor_po}</span> akan ditandai dalam perjalanan (In Transit). Masukkan nomor resi atau ekspedisi pengiriman.
             </p>
 
             <form action={shipAction} encType="multipart/form-data" className="mt-4 space-y-4">
@@ -1008,7 +995,7 @@ export default function RestockManager({
                   type="text"
                   name="nomor_resi"
                   placeholder="Contoh: JNE-TRK-9900123 / SJ-2026-08"
-                  className="w-full px-3 py-2 text-sm rounded-xl bg-rakta-card border border-rakta-subtle text-rakta-navy placeholder:text-rakta-muted/60 focus:outline-none focus:border-rakta-primary focus:ring-2 focus:ring-rakta-primary/20"
+                  className="w-full px-3 py-2 text-sm rounded-xl bg-white border border-rakta-border text-rakta-navy placeholder:text-rakta-muted/60 focus:outline-none focus:border-rakta-primary focus:ring-2 focus:ring-rakta-primary/20"
                 />
               </div>
 
@@ -1020,11 +1007,11 @@ export default function RestockManager({
                   type="text"
                   name="catatan_pengiriman"
                   placeholder="Contoh: Dikirim via Truk Engkel Box (Supir: Bpk. Joko)"
-                  className="w-full px-3 py-2 text-sm rounded-xl bg-rakta-card border border-rakta-subtle text-rakta-navy placeholder:text-rakta-muted/60 focus:outline-none focus:border-rakta-primary focus:ring-2 focus:ring-rakta-primary/20"
+                  className="w-full px-3 py-2 text-sm rounded-xl bg-white border border-rakta-border text-rakta-navy placeholder:text-rakta-muted/60 focus:outline-none focus:border-rakta-primary focus:ring-2 focus:ring-rakta-primary/20"
                 />
               </div>
 
-              <div className="space-y-2 pt-2 border-t border-rakta-subtle/60">
+              <div className="space-y-2 pt-2 border-t border-rakta-border">
                 <label className="block text-xs font-semibold text-rakta-navy">
                   Bukti Foto Pengiriman / Kedatangan (Opsional)
                 </label>
@@ -1034,7 +1021,7 @@ export default function RestockManager({
                     type="file"
                     name="foto_file"
                     accept="image/*"
-                    className="w-full text-xs text-rakta-navy file:mr-3 file:py-1.5 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-rakta-surface file:text-rakta-navy hover:file:bg-rakta-subtle/80 cursor-pointer"
+                    className="w-full text-xs text-rakta-navy file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-rakta-surface file:text-rakta-navy hover:file:bg-rakta-bg cursor-pointer"
                   />
                 </div>
                 <div>
@@ -1043,12 +1030,12 @@ export default function RestockManager({
                     type="url"
                     name="foto_url"
                     placeholder="https://example.com/foto-bukti.jpg"
-                    className="w-full px-3 py-1.5 text-xs rounded-xl bg-rakta-card border border-rakta-subtle text-rakta-navy placeholder:text-rakta-muted/60 focus:outline-none focus:border-rakta-primary focus:ring-2 focus:ring-rakta-primary/20"
+                    className="w-full px-3 py-1.5 text-xs rounded-xl bg-white border border-rakta-border text-rakta-navy placeholder:text-rakta-muted/60 focus:outline-none focus:border-rakta-primary focus:ring-2 focus:ring-rakta-primary/20"
                   />
                 </div>
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-rakta-subtle/60">
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-rakta-border">
                 <Button
                   type="button"
                   variant="outline"
@@ -1056,14 +1043,14 @@ export default function RestockManager({
                     setModalMode(null);
                     setSelectedOrder(null);
                   }}
-                  className="rounded-full text-xs font-semibold px-4 py-2"
+                  className="rounded-xl text-xs font-semibold px-4 py-2 border-rakta-border text-rakta-navy hover:bg-rakta-surface"
                 >
                   Batal
                 </Button>
                 <Button
                   type="submit"
                   disabled={isShipping}
-                  className="rounded-full bg-rakta-primary hover:bg-rakta-navy text-white text-xs font-semibold px-5 py-2 flex items-center gap-1.5 shadow-xs"
+                  className="rounded-xl bg-rakta-primary hover:bg-rakta-primary-hover text-white text-xs font-semibold px-5 py-2 flex items-center gap-1.5 shadow-xs"
                 >
                   {isShipping && <Loader2 className="w-4 h-4 animate-spin" />}
                   <span>{isShipping ? "Memproses..." : "Tandai Dikirim"}</span>
@@ -1077,22 +1064,22 @@ export default function RestockManager({
       {/* MODAL: Tandai Tiba & Mulai Pemeriksaan Fisik (Warehouse Manager) */}
       {modalMode === "inspect" && selectedOrder && (
         <div className="fixed inset-0 z-50 bg-rakta-navy/40 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-rakta-card border border-rakta-subtle/80 rounded-2xl w-full max-w-md p-6 rakta-card-shadow relative my-8 animate-in fade-in zoom-in-95 duration-200">
-            <div className="flex items-center justify-between pb-3 border-b border-rakta-subtle/60">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-amber-50 text-amber-700 flex items-center justify-center">
-                  <CheckCircle2 className="w-4 h-4" />
-                </div>
+          <div className="bg-white border border-rakta-border rounded-2xl w-full max-w-md p-6 rakta-card-shadow relative my-8 animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between pb-3 border-b border-rakta-border">
+              <div>
                 <h3 className="text-base font-bold text-rakta-navy">
                   Konfirmasi Kedatangan Barang
                 </h3>
+                <p className="text-xs text-rakta-muted mt-0.5">
+                  Barang tiba di gudang dan masuk antrean pemeriksaan fisik
+                </p>
               </div>
               <button
                 onClick={() => {
                   setModalMode(null);
                   setSelectedOrder(null);
                 }}
-                className="text-rakta-muted hover:text-rakta-navy p-1 rounded-full hover:bg-rakta-surface transition-colors"
+                className="text-rakta-muted hover:text-rakta-navy p-1 rounded-xl hover:bg-rakta-surface transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -1105,7 +1092,7 @@ export default function RestockManager({
             )}
 
             <p className="text-xs text-rakta-muted mt-3">
-              Tandai barang pesanan <span className="font-bold text-rakta-navy">{selectedOrder.nomor_po}</span> telah tiba di gudang. Status akan beralih ke <span className="font-semibold text-amber-700">Inspecting</span> agar Staff Gudang dapat melakukan pemeriksaan fisik dan menginput dokumen masuk.
+              Tandai barang pesanan <span className="font-bold text-rakta-navy font-mono">{selectedOrder.nomor_po}</span> telah tiba di gudang. Status akan beralih ke <span className="font-semibold text-amber-700">Inspecting</span> agar Staff Gudang dapat melakukan pemeriksaan fisik dan menginput dokumen masuk.
             </p>
 
             <form action={inspectAction} encType="multipart/form-data" className="mt-4 space-y-4">
@@ -1121,7 +1108,7 @@ export default function RestockManager({
                     type="file"
                     name="foto_file"
                     accept="image/*"
-                    className="w-full text-xs text-rakta-navy file:mr-3 file:py-1.5 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-rakta-surface file:text-rakta-navy hover:file:bg-rakta-subtle/80 cursor-pointer"
+                    className="w-full text-xs text-rakta-navy file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-rakta-surface file:text-rakta-navy hover:file:bg-rakta-bg cursor-pointer"
                   />
                 </div>
                 <div>
@@ -1130,7 +1117,7 @@ export default function RestockManager({
                     type="url"
                     name="foto_url"
                     placeholder="https://example.com/foto-bukti.jpg"
-                    className="w-full px-3 py-1.5 text-xs rounded-xl bg-rakta-card border border-rakta-subtle text-rakta-navy placeholder:text-rakta-muted/60 focus:outline-none focus:border-rakta-primary focus:ring-2 focus:ring-rakta-primary/20"
+                    className="w-full px-3 py-1.5 text-xs rounded-xl bg-white border border-rakta-border text-rakta-navy placeholder:text-rakta-muted/60 focus:outline-none focus:border-rakta-primary focus:ring-2 focus:ring-rakta-primary/20"
                   />
                 </div>
               </div>
@@ -1143,11 +1130,11 @@ export default function RestockManager({
                   name="catatan_tiba"
                   rows={2}
                   placeholder="Contoh: Barang telah tiba di loading dock A. Harap periksa segel kardus dan jumlah barang."
-                  className="w-full px-3 py-2 text-xs rounded-xl bg-rakta-card border border-rakta-subtle text-rakta-navy placeholder:text-rakta-muted/60 focus:outline-none focus:border-rakta-primary focus:ring-2 focus:ring-rakta-primary/20 resize-none"
+                  className="w-full px-3 py-2 text-xs rounded-xl bg-white border border-rakta-border text-rakta-navy placeholder:text-rakta-muted/60 focus:outline-none focus:border-rakta-primary focus:ring-2 focus:ring-rakta-primary/20 resize-none"
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-rakta-subtle/60">
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-rakta-border">
                 <Button
                   type="button"
                   variant="outline"
@@ -1155,14 +1142,14 @@ export default function RestockManager({
                     setModalMode(null);
                     setSelectedOrder(null);
                   }}
-                  className="rounded-full text-xs font-semibold px-4 py-2"
+                  className="rounded-xl text-xs font-semibold px-4 py-2 border-rakta-border text-rakta-navy hover:bg-rakta-surface"
                 >
                   Batal
                 </Button>
                 <Button
                   type="submit"
                   disabled={isInspecting}
-                  className="rounded-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-5 py-2 flex items-center gap-1.5 shadow-xs"
+                  className="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-5 py-2 flex items-center gap-1.5 shadow-xs"
                 >
                   {isInspecting && <Loader2 className="w-4 h-4 animate-spin" />}
                   <span>{isInspecting ? "Memproses..." : "Konfirmasi Tiba & Cek Fisik"}</span>
@@ -1176,22 +1163,18 @@ export default function RestockManager({
       {/* MODAL: Ajukan Klaim Refund (Warehouse Manager) */}
       {modalMode === "refund" && selectedOrder && (
         <div className="fixed inset-0 z-50 bg-rakta-navy/40 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-rakta-card border border-rakta-subtle/80 rounded-2xl w-full max-w-md p-6 rakta-card-shadow relative my-8 animate-in fade-in zoom-in-95 duration-200">
-            <div className="flex items-center justify-between pb-3 border-b border-rakta-subtle/60">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-rose-50 text-rose-700 flex items-center justify-center">
-                  <ShieldAlert className="w-4 h-4" />
-                </div>
-                <h3 className="text-base font-bold text-rakta-navy">
-                  Pengajuan Klaim Refund / Retur
-                </h3>
-              </div>
+          <div className="bg-white border border-rakta-border rounded-2xl w-full max-w-md p-6 rakta-card-shadow relative my-8 animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between pb-3 border-b border-rakta-border">
+              <h3 className="text-base font-bold text-rose-700 flex items-center gap-2">
+                <ShieldAlert className="w-5 h-5 text-rose-600" />
+                <span>Pengajuan Klaim Refund / Retur</span>
+              </h3>
               <button
                 onClick={() => {
                   setModalMode(null);
                   setSelectedOrder(null);
                 }}
-                className="text-rakta-muted hover:text-rakta-navy p-1 rounded-full hover:bg-rakta-surface transition-colors"
+                className="text-rakta-muted hover:text-rakta-navy p-1 rounded-xl hover:bg-rakta-surface transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -1204,7 +1187,7 @@ export default function RestockManager({
             )}
 
             <p className="text-xs text-rakta-muted mt-3">
-              Ajukan klaim refund kepada mitra supplier untuk pesanan <span className="font-bold text-rakta-navy">{selectedOrder.nomor_po}</span> yang ditolak karena cacat fisik atau tidak sesuai spesifikasi.
+              Ajukan klaim refund kepada mitra supplier untuk pesanan <span className="font-bold text-rakta-navy font-mono">{selectedOrder.nomor_po}</span> yang ditolak karena cacat fisik atau tidak sesuai spesifikasi.
             </p>
 
             <form action={refundAction} className="mt-4 space-y-4">
@@ -1219,11 +1202,11 @@ export default function RestockManager({
                   rows={3}
                   required
                   placeholder="Contoh: Barang mengalami kerusakan segel dan 15 unit penyok saat tiba di gudang. Meminta pengembalian dana 100% atau penggantian batch pengiriman baru."
-                  className="w-full px-3 py-2 text-xs rounded-xl bg-rakta-card border border-rakta-subtle text-rakta-navy placeholder:text-rakta-muted/60 focus:outline-none focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20 resize-none"
+                  className="w-full px-3 py-2 text-xs rounded-xl bg-white border border-rakta-border text-rakta-navy placeholder:text-rakta-muted/60 focus:outline-none focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20 resize-none"
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-rakta-subtle/60">
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-rakta-border">
                 <Button
                   type="button"
                   variant="outline"
@@ -1231,14 +1214,14 @@ export default function RestockManager({
                     setModalMode(null);
                     setSelectedOrder(null);
                   }}
-                  className="rounded-full text-xs font-semibold px-4 py-2"
+                  className="rounded-xl text-xs font-semibold px-4 py-2 border-rakta-border text-rakta-navy hover:bg-rakta-surface"
                 >
                   Batal
                 </Button>
                 <Button
                   type="submit"
                   disabled={isRefunding}
-                  className="rounded-full bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold px-5 py-2 flex items-center gap-1.5 shadow-xs"
+                  className="rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold px-5 py-2 flex items-center gap-1.5 shadow-xs"
                 >
                   {isRefunding && <Loader2 className="w-4 h-4 animate-spin" />}
                   <span>{isRefunding ? "Mengajukan..." : "Kirim Klaim Refund"}</span>
@@ -1248,6 +1231,7 @@ export default function RestockManager({
           </div>
         </div>
       )}
+
       {/* Modal Konfirmasi Tindakan PO */}
       <ConfirmModal
         isOpen={Boolean(confirmDialog)}
@@ -1281,21 +1265,16 @@ export default function RestockManager({
       {/* MODAL: Beri Rating Mitra Supplier */}
       {ratingOrder && (
         <div className="fixed inset-0 z-50 bg-rakta-navy/40 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-rakta-card border border-rakta-subtle/80 rounded-2xl w-full max-w-lg p-6 rakta-card-shadow relative my-8 animate-in fade-in zoom-in-95 duration-200">
+          <div className="bg-white border border-rakta-border rounded-2xl w-full max-w-lg p-6 rakta-card-shadow relative my-8 animate-in fade-in zoom-in-95 duration-200">
             {/* Header Modal */}
-            <div className="flex items-center justify-between pb-4 border-b border-rakta-subtle/60">
-              <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-full bg-amber-50 border border-amber-200 text-amber-600 flex items-center justify-center">
-                  <Star className="w-5 h-5 fill-current" />
-                </div>
-                <div>
-                  <h3 className="text-base font-bold text-rakta-navy">
-                    Beri Rating Mitra Supplier
-                  </h3>
-                  <p className="text-xs text-rakta-muted">
-                    Evaluasi performa pengiriman untuk pesanan {ratingOrder.nomor_po}
-                  </p>
-                </div>
+            <div className="flex items-center justify-between pb-4 border-b border-rakta-border">
+              <div>
+                <h3 className="text-base font-bold text-rakta-navy">
+                  Beri Rating Mitra Supplier
+                </h3>
+                <p className="text-xs text-rakta-muted mt-0.5">
+                  Evaluasi performa pengiriman untuk pesanan {ratingOrder.nomor_po}
+                </p>
               </div>
               <button
                 onClick={() => {
@@ -1303,7 +1282,7 @@ export default function RestockManager({
                   setRatingScore(5);
                   setRatingHover(0);
                 }}
-                className="text-rakta-muted hover:text-rakta-navy p-1.5 rounded-full hover:bg-rakta-surface transition-colors cursor-pointer"
+                className="text-rakta-muted hover:text-rakta-navy p-1.5 rounded-xl hover:bg-rakta-surface transition-colors cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -1318,10 +1297,10 @@ export default function RestockManager({
             )}
 
             {/* Rincian Supplier */}
-            <div className="mt-4 p-3.5 rounded-xl bg-rakta-surface/70 border border-rakta-subtle/70 text-xs space-y-1">
+            <div className="mt-4 p-3.5 rounded-xl bg-rakta-surface border border-rakta-border text-xs space-y-1">
               <div className="flex items-center justify-between font-bold text-rakta-navy">
                 <span>{ratingOrder.supplier_perusahaan || ratingOrder.supplier_nama}</span>
-                <span className="font-mono text-[11px] px-2 py-0.5 rounded bg-rakta-card border border-rakta-subtle font-normal">
+                <span className="font-mono text-[11px] px-2 py-0.5 rounded bg-white border border-rakta-border font-semibold">
                   {ratingOrder.nomor_po}
                 </span>
               </div>
@@ -1358,14 +1337,14 @@ export default function RestockManager({
                           className={`w-8 h-8 transition-colors ${
                             isFilled
                               ? "fill-amber-400 text-amber-500"
-                              : "text-rakta-subtle/80 hover:text-amber-300"
+                              : "text-rakta-border hover:text-amber-300"
                           }`}
                         />
                       </button>
                     );
                   })}
                 </div>
-                <p className="text-center text-xs font-semibold text-amber-700 mt-1">
+                <p className="text-center text-xs font-semibold text-amber-800 mt-1">
                   {ratingScore === 5
                     ? "5 Bintang - Sangat Memuaskan"
                     : ratingScore === 4
@@ -1387,12 +1366,12 @@ export default function RestockManager({
                   name="review_note"
                   rows={3}
                   placeholder="Contoh: Pengiriman tepat waktu, kemasan barang rapi dan tersegel dengan baik..."
-                  className="w-full px-3 py-2 text-sm rounded-xl bg-rakta-card border border-rakta-subtle text-rakta-navy placeholder:text-rakta-muted/60 focus:outline-none focus:border-rakta-primary focus:ring-2 focus:ring-rakta-primary/20 resize-none"
+                  className="w-full px-3 py-2 text-sm rounded-xl bg-white border border-rakta-border text-rakta-navy placeholder:text-rakta-muted/60 focus:outline-none focus:border-rakta-primary focus:ring-2 focus:ring-rakta-primary/20 resize-none"
                 />
               </div>
 
               {/* Tombol Aksi */}
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-rakta-subtle/60">
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-rakta-border">
                 <Button
                   type="button"
                   variant="outline"
@@ -1401,14 +1380,14 @@ export default function RestockManager({
                     setRatingScore(5);
                     setRatingHover(0);
                   }}
-                  className="rounded-full text-xs font-semibold px-4 py-2"
+                  className="rounded-xl text-xs font-semibold px-4 py-2 border-rakta-border text-rakta-navy hover:bg-rakta-surface"
                 >
                   Batal
                 </Button>
                 <Button
                   type="submit"
                   disabled={isRating}
-                  className="rounded-full bg-rakta-primary hover:bg-rakta-navy text-white text-xs font-semibold px-5 py-2 flex items-center gap-1.5 shadow-sm"
+                  className="rounded-xl bg-rakta-primary hover:bg-rakta-primary-hover text-white text-xs font-semibold px-5 py-2 flex items-center gap-1.5 shadow-xs"
                 >
                   {isRating && <Loader2 className="w-4 h-4 animate-spin" />}
                   <span>{isRating ? "Menyimpan..." : "Simpan Penilaian"}</span>

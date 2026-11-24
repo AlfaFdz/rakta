@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { logoutAction } from "@/app/actions/auth";
 import Button from "@/components/ui/Button";
@@ -12,10 +13,10 @@ import {
   Layers,
   ArrowLeftRight,
   Truck,
+  Building2,
   LogOut,
   Menu,
   X,
-  ShieldCheck,
 } from "lucide-react";
 
 export default function Navbar({ session }) {
@@ -24,14 +25,16 @@ export default function Navbar({ session }) {
 
   const role = session?.role;
 
-  // Navigation Bar
+  // Daftar menu terstruktur per role
   const menuConfig = {
     admin: [
       { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
       { label: "Kelola Pengguna", href: "/users", icon: Users },
+      { label: "Verifikasi Supplier", href: "/suppliers", icon: Building2 },
       { label: "Produk", href: "/products", icon: Package },
       { label: "Kategori", href: "/categories", icon: Layers },
       { label: "Transaksi", href: "/transactions", icon: ArrowLeftRight },
+      { label: "Restock", href: "/restock", icon: Truck },
     ],
     warehouse_manager: [
       { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -64,20 +67,26 @@ export default function Navbar({ session }) {
   };
 
   return (
-    <header className="sticky top-0 z-50 bg-rakta-card/90 backdrop-blur-md border-b border-rakta-subtle/70 rakta-card-shadow">
+    <header className="sticky top-0 z-50 bg-rakta-card/85 backdrop-blur-md border-b border-rakta-border rakta-card-shadow">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
         
-        {/* Brand & Logo */}
-        <div className="flex items-center gap-6">
+        {/* Brand & Desktop Nav Links */}
+        <div className="flex items-center gap-8">
           <Link href="/dashboard" className="flex items-center gap-2.5 group">
-            <div className="w-8 h-8 rounded-full bg-rakta-primary text-white flex items-center justify-center font-bold text-sm shadow-xs transition-transform group-hover:scale-105">
-              R
-            </div>
-            <div>
-              <span className="font-bold text-lg tracking-tight text-rakta-navy">
+            {/* Logo Mandiri SVG RAKTA */}
+            <Image
+              src="/logo.svg"
+              alt="Logo RAKTA"
+              width={32}
+              height={32}
+              priority
+              className="w-8 h-8 rounded-xl shrink-0 transition-transform group-hover:scale-105"
+            />
+            <div className="flex items-center gap-1.5">
+              <span className="font-extrabold text-lg tracking-tight text-rakta-navy">
                 RAKTA
               </span>
-              <span className="hidden sm:inline-block ml-1.5 text-[10px] bg-rakta-bg text-rakta-navy px-2 py-0.5 rounded-full font-mono font-semibold border border-rakta-subtle/60">
+              <span className="hidden sm:inline-block text-[10px] bg-rakta-bg/70 text-rakta-navy px-2 py-0.5 rounded-lg font-mono font-semibold border border-rakta-border">
                 Gudang
               </span>
             </div>
@@ -95,13 +104,13 @@ export default function Navbar({ session }) {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs transition-colors duration-150 ${
+                  className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs transition-colors duration-150 ${
                     isActive
-                      ? "bg-rakta-subtle/60 text-rakta-navy font-semibold shadow-2xs"
-                      : "text-rakta-muted hover:bg-rakta-subtle/30 hover:text-rakta-navy font-medium"
+                      ? "bg-rakta-bg/70 text-rakta-navy font-semibold border border-rakta-border"
+                      : "text-rakta-muted hover:bg-rakta-surface hover:text-rakta-navy font-medium"
                   }`}
                 >
-                  <Icon className="w-3.5 h-3.5" />
+                  <Icon className="w-3.5 h-3.5 shrink-0 opacity-80" />
                   <span>{item.label}</span>
                 </Link>
               );
@@ -115,12 +124,12 @@ export default function Navbar({ session }) {
             <div className="text-xs font-semibold text-rakta-navy leading-tight">
               {session?.nama || "Pengguna"}
             </div>
-            <div className="text-[10px] font-mono text-rakta-muted capitalize">
+            <div className="text-[10px] font-mono text-rakta-muted">
               {roleLabels[role] || role}
             </div>
           </div>
 
-          <span className="h-6 w-px bg-rakta-subtle/60" />
+          <span className="h-6 w-px bg-rakta-border" />
 
           <form action={logoutAction}>
             <Button
@@ -129,7 +138,7 @@ export default function Navbar({ session }) {
               size="sm"
               className="text-xs px-3 py-1.5"
             >
-              <LogOut className="w-3.5 h-3.5 mr-1" /> Keluar
+              <LogOut className="w-3.5 h-3.5 mr-1 text-rakta-muted" /> Keluar
             </Button>
           </form>
         </div>
@@ -144,7 +153,7 @@ export default function Navbar({ session }) {
           <button
             type="button"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="p-2 rounded-xl text-rakta-navy hover:bg-rakta-subtle/30 focus:outline-none"
+            className="p-2 rounded-xl text-rakta-navy hover:bg-rakta-surface focus:outline-none cursor-pointer"
             aria-label="Buka Menu"
           >
             {mobileMenuOpen ? (
@@ -159,10 +168,10 @@ export default function Navbar({ session }) {
 
       {/* Mobile Drawer Navigation */}
       {mobileMenuOpen && (
-        <div className="md:hidden border-t border-rakta-subtle/60 bg-rakta-card px-4 pt-3 pb-5 space-y-3">
-          <div className="pb-2 border-b border-rakta-subtle/40 flex items-center justify-between text-xs">
+        <div className="md:hidden border-t border-rakta-border bg-rakta-card/95 backdrop-blur-md px-4 pt-3 pb-5 space-y-3">
+          <div className="pb-2 border-b border-rakta-border/60 flex items-center justify-between text-xs">
             <span className="font-semibold text-rakta-navy">{session?.nama}</span>
-            <span className="text-[10px] bg-rakta-bg text-rakta-navy px-2 py-0.5 rounded-full font-mono font-medium">
+            <span className="text-[10px] bg-rakta-bg/70 text-rakta-navy px-2 py-0.5 rounded-lg font-mono font-medium">
               {roleLabels[role] || role}
             </span>
           </div>
@@ -181,8 +190,8 @@ export default function Navbar({ session }) {
                   onClick={() => setMobileMenuOpen(false)}
                   className={`flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-xs transition-colors ${
                     isActive
-                      ? "bg-rakta-subtle/60 text-rakta-navy font-semibold"
-                      : "text-rakta-muted hover:bg-rakta-subtle/20 hover:text-rakta-navy font-medium"
+                      ? "bg-rakta-bg/70 text-rakta-navy font-semibold border border-rakta-border"
+                      : "text-rakta-muted hover:bg-rakta-surface hover:text-rakta-navy font-medium"
                   }`}
                 >
                   <Icon className="w-4 h-4 text-rakta-primary" />

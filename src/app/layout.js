@@ -2,9 +2,10 @@ import { Plus_Jakarta_Sans, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
-  variable: "--font-plus-jakarta-sans",
+  variable: "--font-plus-jakarta",
   subsets: ["latin"],
   display: "swap",
+  weight: ["400", "500", "600", "700", "800"],
 });
 
 const jetbrainsMono = JetBrains_Mono({
@@ -14,8 +15,13 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata = {
-  title: "RAKTA — Sistem Manajemen Gudang",
+  title: "RAKTA | Sistem Manajemen Pergudangan & Logistik",
   description: "Sistem Manajemen Gudang RAKTA modern, minimalis, dan terstruktur.",
+  icons: {
+    icon: "/logo.svg",
+    shortcut: "/logo.svg",
+    apple: "/logo.svg",
+  },
 };
 
 export default function RootLayout({ children }) {
@@ -24,7 +30,7 @@ export default function RootLayout({ children }) {
       lang="id"
       className={`${plusJakartaSans.variable} ${jetbrainsMono.variable} h-full`}
     >
-      <body className="min-h-full flex flex-col font-sans bg-linear-to-b from-rakta-bg to-rakta-surface text-rakta-navy antialiased selection:bg-rakta-subtle/50">
+      <body className="min-h-full flex flex-col font-sans text-rakta-navy antialiased selection:bg-rakta-bg">
         {children}
       </body>
     </html>

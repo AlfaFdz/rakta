@@ -3,7 +3,6 @@ import { getSession } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { formatRupiah } from "@/lib/format";
 import ProductManager from "@/components/products/ProductManager";
-import { Package, CheckCircle2, AlertTriangle, Coins } from "lucide-react";
 
 export const metadata = {
   title: "Katalog Master Produk & Stok | RAKTA",
@@ -69,67 +68,64 @@ export default async function ProductsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="bg-rakta-card border border-rakta-subtle/70 rounded-2xl p-6 rakta-card-shadow flex items-center justify-between">
+      {/* Header */}
+      <div className="bg-white border border-rakta-border rounded-2xl p-6 rakta-card-shadow flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl font-bold text-rakta-navy">Katalog Master Produk &amp; Stok</h1>
-          <p className="text-xs text-rakta-muted mt-1">
-            Pantau informasi SKU, harga, stok minimum, stok low, dan lokasi rak barang.
+          <span className="text-xs font-semibold text-rakta-primary tracking-wider uppercase">
+            Inventaris Gudang
+          </span>
+          <h1 className="text-2xl font-bold text-rakta-navy tracking-tight mt-0.5">
+            Katalog Master Produk &amp; Stok
+          </h1>
+          <p className="text-sm text-rakta-muted mt-1">
+            Pantau informasi SKU, harga per unit, stok minimum, stok low, dan alokasi rak gudang.
           </p>
-        </div>
-        <div className="w-10 h-10 rounded-full bg-rakta-bg flex items-center justify-center text-rakta-primary">
-          <Package className="w-5 h-5" />
         </div>
       </div>
 
-      {/* 4 Kartu Metrik Analitik Inventaris */}
+      {/* 4 Kartu Metrik Analitik Inventaris (Anti-Slop: Zero Icon Bubbles, Full Valuation Display) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Metrik 1: Total SKU */}
-        <div className="bg-rakta-card border border-rakta-subtle/70 rounded-2xl p-5 rakta-card-shadow flex items-center justify-between">
-          <div>
-            <p className="text-xs font-semibold text-rakta-muted">Total SKU Produk</p>
-            <h3 className="text-2xl font-bold text-rakta-navy mt-1">{totalSku}</h3>
-            <p className="text-[11px] text-rakta-muted mt-0.5">Item terdaftar di katalog</p>
-          </div>
-          <div className="w-11 h-11 rounded-2xl bg-rakta-surface border border-rakta-subtle flex items-center justify-center text-rakta-primary shrink-0">
-            <Package className="w-5 h-5" />
+        <div className="bg-white border border-rakta-border rounded-2xl p-5 rakta-card-shadow flex flex-col justify-between">
+          <p className="text-xs font-semibold text-rakta-muted">Total SKU Produk</p>
+          <div className="mt-2">
+            <h3 className="text-2xl font-bold font-mono tabular-nums text-rakta-navy">
+              {totalSku}
+            </h3>
+            <p className="text-xs text-rakta-muted mt-1">Item terdaftar di katalog master</p>
           </div>
         </div>
 
         {/* Metrik 2: Stok Aman */}
-        <div className="bg-rakta-card border border-rakta-subtle/70 rounded-2xl p-5 rakta-card-shadow flex items-center justify-between">
-          <div>
-            <p className="text-xs font-semibold text-rakta-muted">Stok Aman</p>
-            <h3 className="text-2xl font-bold text-emerald-600 mt-1">{stokAman}</h3>
-            <p className="text-[11px] text-rakta-muted mt-0.5">Di atas ambang stok low</p>
-          </div>
-          <div className="w-11 h-11 rounded-2xl bg-emerald-50 border border-emerald-200/80 flex items-center justify-center text-emerald-600 shrink-0">
-            <CheckCircle2 className="w-5 h-5" />
+        <div className="bg-white border border-rakta-border rounded-2xl p-5 rakta-card-shadow flex flex-col justify-between">
+          <p className="text-xs font-semibold text-rakta-muted">Stok Aman</p>
+          <div className="mt-2">
+            <h3 className="text-2xl font-bold font-mono tabular-nums text-emerald-700">
+              {stokAman}
+            </h3>
+            <p className="text-xs text-rakta-muted mt-1">Kuantitas di atas ambang batas low</p>
           </div>
         </div>
 
         {/* Metrik 3: Menipis & Kritis */}
-        <div className="bg-rakta-card border border-rakta-subtle/70 rounded-2xl p-5 rakta-card-shadow flex items-center justify-between">
-          <div>
-            <p className="text-xs font-semibold text-rakta-muted">Menipis / Kritis</p>
-            <h3 className="text-2xl font-bold text-rose-600 mt-1">{stokKritis}</h3>
-            <p className="text-[11px] text-rakta-muted mt-0.5">Perlu pengajuan restock</p>
-          </div>
-          <div className="w-11 h-11 rounded-2xl bg-rose-50 border border-rose-200/80 flex items-center justify-center text-rose-600 shrink-0">
-            <AlertTriangle className="w-5 h-5" />
+        <div className="bg-white border border-rakta-border rounded-2xl p-5 rakta-card-shadow flex flex-col justify-between">
+          <p className="text-xs font-semibold text-rakta-muted">Menipis / Kritis</p>
+          <div className="mt-2">
+            <h3 className="text-2xl font-bold font-mono tabular-nums text-rose-700">
+              {stokKritis}
+            </h3>
+            <p className="text-xs text-rakta-muted mt-1">Perlu pengajuan restock segera</p>
           </div>
         </div>
 
-        {/* Metrik 4: Estimasi Nilai Inventaris */}
-        <div className="bg-rakta-card border border-rakta-subtle/70 rounded-2xl p-5 rakta-card-shadow flex items-center justify-between">
-          <div>
-            <p className="text-xs font-semibold text-rakta-muted">Estimasi Nilai Inventaris</p>
-            <h3 className="text-lg font-bold text-rakta-navy mt-1 truncate" title={formatRupiah(totalValuasi)}>
+        {/* Metrik 4: Estimasi Nilai Inventaris (Utuh Tanpa Truncate) */}
+        <div className="bg-white border border-rakta-border rounded-2xl p-5 rakta-card-shadow flex flex-col justify-between">
+          <p className="text-xs font-semibold text-rakta-muted">Estimasi Nilai Inventaris</p>
+          <div className="mt-2">
+            <h3 className="text-xl xl:text-2xl font-bold font-mono tabular-nums text-rakta-navy">
               {formatRupiah(totalValuasi)}
             </h3>
-            <p className="text-[11px] text-rakta-muted mt-0.5">Total valuasi harga beli</p>
-          </div>
-          <div className="w-11 h-11 rounded-2xl bg-rakta-surface border border-rakta-subtle flex items-center justify-center text-rakta-primary shrink-0">
-            <Coins className="w-5 h-5" />
+            <p className="text-xs text-rakta-muted mt-1">Total valuasi harga beli fisik</p>
           </div>
         </div>
       </div>

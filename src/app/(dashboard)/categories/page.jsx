@@ -1,9 +1,12 @@
 import { getSession } from "@/lib/auth";
 import { query } from "@/lib/db";
 import { redirect } from "next/navigation";
-import { Card } from "@/components/ui/Card";
 import CategoryManager from "@/components/categories/CategoryManager";
-import { Layers, Package, FolderCheck, FolderPlus } from "lucide-react";
+
+export const metadata = {
+  title: "Kategori Produk Pergudangan | RAKTA",
+  description: "Struktur pengelompokan master barang untuk penataan lokasi rak dan katalog gudang.",
+};
 
 export default async function CategoriesPage() {
   const session = await getSession();
@@ -33,68 +36,61 @@ export default async function CategoriesPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="bg-rakta-card border border-rakta-subtle/70 rounded-2xl p-6 rakta-card-shadow flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="bg-white border border-rakta-border rounded-2xl p-6 rakta-card-shadow flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-xl font-bold text-rakta-navy">Kategori Produk Pergudangan</h1>
-            <span className="text-xs bg-rakta-bg text-rakta-navy font-semibold px-2.5 py-0.5 rounded-full border border-rakta-subtle">
-              Inventaris
-            </span>
-          </div>
-          <p className="text-xs text-rakta-muted mt-1">
-            Struktur pengelompokan barang untuk mempermudah penataan lokasi rak dan pencatatan master data.
+          <span className="text-xs font-semibold text-rakta-primary tracking-wider uppercase">
+            Klasifikasi Inventaris
+          </span>
+          <h1 className="text-2xl font-bold text-rakta-navy tracking-tight mt-0.5">
+            Kategori Produk Pergudangan
+          </h1>
+          <p className="text-sm text-rakta-muted mt-1">
+            Struktur pengelompokan master barang untuk mempermudah penataan lokasi rak dan pencatatan inventaris.
           </p>
-        </div>
-        <div className="w-10 h-10 rounded-full bg-rakta-bg flex items-center justify-center text-rakta-primary shrink-0">
-          <Layers className="w-5 h-5" />
         </div>
       </div>
 
       {/* 4 Kartu Metrik Ringkasan Kategori */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
-        <Card className="p-4">
-          <div className="flex items-center justify-between text-xs text-rakta-muted">
-            <span>Total Kategori</span>
-            <Layers className="w-3.5 h-3.5 text-rakta-primary" />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="bg-white border border-rakta-border rounded-2xl p-5 rakta-card-shadow flex flex-col justify-between">
+          <p className="text-xs font-semibold text-rakta-muted">Total Kategori</p>
+          <div className="mt-2">
+            <h3 className="text-2xl font-bold font-mono tabular-nums text-rakta-navy">
+              {totalKategori}
+            </h3>
+            <p className="text-xs text-rakta-muted mt-1">Kelompok master barang</p>
           </div>
-          <div className="text-2xl font-bold text-rakta-navy font-mono mt-1">
-            {totalKategori}
-          </div>
-          <span className="text-[10px] text-rakta-muted">Kelompok barang</span>
-        </Card>
+        </div>
 
-        <Card className="p-4">
-          <div className="flex items-center justify-between text-xs text-emerald-700">
-            <span>Kategori Terisi</span>
-            <FolderCheck className="w-3.5 h-3.5 text-emerald-600" />
+        <div className="bg-white border border-rakta-border rounded-2xl p-5 rakta-card-shadow flex flex-col justify-between">
+          <p className="text-xs font-semibold text-rakta-muted">Kategori Terisi</p>
+          <div className="mt-2">
+            <h3 className="text-2xl font-bold font-mono tabular-nums text-emerald-700">
+              {kategoriTerisi}
+            </h3>
+            <p className="text-xs text-rakta-muted mt-1">Memiliki produk aktif</p>
           </div>
-          <div className="text-2xl font-bold text-emerald-700 font-mono mt-1">
-            {kategoriTerisi}
-          </div>
-          <span className="text-[10px] text-rakta-muted">Memiliki produk aktif</span>
-        </Card>
+        </div>
 
-        <Card className="p-4">
-          <div className="flex items-center justify-between text-xs text-amber-700">
-            <span>Kategori Kosong</span>
-            <FolderPlus className="w-3.5 h-3.5 text-amber-600" />
+        <div className="bg-white border border-rakta-border rounded-2xl p-5 rakta-card-shadow flex flex-col justify-between">
+          <p className="text-xs font-semibold text-rakta-muted">Kategori Kosong</p>
+          <div className="mt-2">
+            <h3 className="text-2xl font-bold font-mono tabular-nums text-amber-700">
+              {kategoriKosong}
+            </h3>
+            <p className="text-xs text-rakta-muted mt-1">Dapat dihapus dengan aman</p>
           </div>
-          <div className="text-2xl font-bold text-amber-600 font-mono mt-1">
-            {kategoriKosong}
-          </div>
-          <span className="text-[10px] text-rakta-muted">Dapat dihapus aman</span>
-        </Card>
+        </div>
 
-        <Card className="p-4">
-          <div className="flex items-center justify-between text-xs text-rakta-muted">
-            <span>Total Master Produk</span>
-            <Package className="w-3.5 h-3.5 text-rakta-primary" />
+        <div className="bg-white border border-rakta-border rounded-2xl p-5 rakta-card-shadow flex flex-col justify-between">
+          <p className="text-xs font-semibold text-rakta-muted">Total Master Produk</p>
+          <div className="mt-2">
+            <h3 className="text-2xl font-bold font-mono tabular-nums text-rakta-navy">
+              {totalProdukGudang}
+            </h3>
+            <p className="text-xs text-rakta-muted mt-1">SKU yang terklasifikasi</p>
           </div>
-          <div className="text-2xl font-bold text-rakta-navy font-mono mt-1">
-            {totalProdukGudang}
-          </div>
-          <span className="text-[10px] text-rakta-muted">SKU terklasifikasi</span>
-        </Card>
+        </div>
       </div>
 
       {/* Manajemen & Tabel Interaktif Kategori */}

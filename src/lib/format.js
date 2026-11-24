@@ -40,13 +40,13 @@ export function hitungStatusStok(jumlahStok, stokMinimum = 10, stokLow = 20) {
   const low = Number(stokLow) || 0;
 
   if (stok <= 0) {
-    return { kode: "habis", label: "Out of Stock" };
+    return { kode: "out_of_stock", label: "Out of Stock" };
   }
   if (stok <= min) {
-    return { kode: "kritis", label: "Severe" };
+    return { kode: "severe", label: "Severe" };
   }
   if (stok <= low) {
-    return { kode: "menipis", label: "Low" };
+    return { kode: "low", label: "Low" };
   }
   return { kode: "normal", label: "Normal" };
 }

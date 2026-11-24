@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useTransition, useActionState, useId } from "react";
+import { useState, useTransition, useActionState } from "react";
 import Link from "next/link";
 import { createProductAction, updateProductAction, deleteProductAction, adjustStockAction } from "@/app/actions/products";
 import Button from "@/components/ui/Button";
-import Input from "@/components/ui/Input";
 import ConfirmModal from "@/components/ConfirmModal";
-import { formatRupiah, hitungStatusStok, formatTanggal } from "@/lib/format";
+import StockBadge from "@/components/ui/StockBadge";
+import { formatRupiah, hitungStatusStok } from "@/lib/format";
 import { exportToCsv } from "@/lib/exportCsv";
 import {
   Package,
@@ -23,8 +23,6 @@ import {
   Building2,
   Filter,
   Loader2,
-  Layers,
-  Info,
   QrCode,
   Download,
 } from "lucide-react";
@@ -176,10 +174,10 @@ export default function ProductManager({
       {/* Notifikasi Umpan Balik */}
       {feedback && (
         <div
-          className={`p-4 rounded-2xl flex items-start justify-between gap-3 border ${
+          className={`p-4 rounded-xl flex items-start justify-between gap-3 border ${
             feedback.type === "success"
-              ? "bg-emerald-50/80 border-emerald-200 text-emerald-800"
-              : "bg-rose-50/80 border-rose-200 text-rose-800"
+              ? "bg-emerald-50/90 border-emerald-200 text-emerald-800"
+              : "bg-rose-50/90 border-rose-200 text-rose-800"
           }`}
         >
           <div className="flex items-start gap-2.5">
@@ -192,7 +190,7 @@ export default function ProductManager({
           </div>
           <button
             onClick={() => setFeedback(null)}
-            className="text-rakta-muted hover:text-rakta-navy p-1 transition-colors"
+            className="text-rakta-muted hover:text-rakta-navy p-1 transition-colors cursor-pointer"
             title="Tutup pemberitahuan"
           >
             <X className="w-4 h-4" />
@@ -201,18 +199,18 @@ export default function ProductManager({
       )}
 
       {/* Bilah Alat & Filter (Toolbar) */}
-      <div className="bg-rakta-card border border-rakta-subtle/70 rounded-2xl p-4 md:p-5 rakta-card-shadow flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+      <div className="bg-white border border-rakta-border rounded-2xl p-4 md:p-5 rakta-card-shadow flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         {/* Kolom Kiri: Search & Filter Kategori */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 flex-1">
           {/* Input Pencarian */}
-          <div className="relative flex-1 min-w-55">
+          <div className="relative flex-1 min-w-60">
             <Search className="w-4 h-4 text-rakta-muted absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               placeholder="Cari nama produk, SKU, atau rak..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 text-sm rounded-xl bg-rakta-card border border-rakta-subtle text-rakta-navy placeholder:text-rakta-muted/60 focus:outline-none focus:border-rakta-primary focus:ring-2 focus:ring-rakta-primary/20 transition-all"
+              className="w-full pl-9 pr-8 py-2 text-sm rounded-xl bg-white border border-rakta-border text-rakta-navy placeholder:text-rakta-muted/60 focus:outline-none focus:border-rakta-primary focus:ring-2 focus:ring-rakta-primary/20 transition-all"
             />
             {searchQuery && (
               <button
@@ -230,7 +228,7 @@ export default function ProductManager({
             <select
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
-              className="w-full pl-9 pr-8 py-2 text-sm rounded-xl bg-rakta-card border border-rakta-subtle text-rakta-navy focus:outline-none focus:border-rakta-primary focus:ring-2 focus:ring-rakta-primary/20 transition-all appearance-none cursor-pointer"
+              className="w-full pl-9 pr-8 py-2 text-sm rounded-xl bg-white border border-rakta-border text-rakta-navy focus:outline-none focus:border-rakta-primary focus:ring-2 focus:ring-rakta-primary/20 transition-all appearance-none cursor-pointer"
             >
               <option value="all">Semua Kategori</option>
               {categories.map((c) => (
@@ -244,13 +242,13 @@ export default function ProductManager({
 
         {/* Kolom Kanan: Tab Status Stok & Tombol Tambah */}
         <div className="flex flex-wrap items-center gap-3">
-          {/* Filter Tab Kapsul Status Stok */}
-          <div className="inline-flex p-1 bg-rakta-surface border border-rakta-subtle/80 rounded-full">
+          {/* Filter Tab Status Stok */}
+          <div className="inline-flex p-1 bg-rakta-surface border border-rakta-border rounded-xl">
             <button
               onClick={() => setStockFilter("all")}
-              className={`px-3 py-1 text-xs font-semibold rounded-full transition-all ${
+              className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
                 stockFilter === "all"
-                  ? "bg-rakta-card text-rakta-navy shadow-sm"
+                  ? "bg-rakta-bg/80 text-rakta-navy shadow-xs"
                   : "text-rakta-muted hover:text-rakta-navy"
               }`}
             >
@@ -258,9 +256,9 @@ export default function ProductManager({
             </button>
             <button
               onClick={() => setStockFilter("aman")}
-              className={`px-3 py-1 text-xs font-semibold rounded-full transition-all ${
+              className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
                 stockFilter === "aman"
-                  ? "bg-emerald-50 text-emerald-700 shadow-sm border border-emerald-200/60"
+                  ? "bg-emerald-100/80 text-emerald-900 shadow-xs"
                   : "text-rakta-muted hover:text-rakta-navy"
               }`}
             >
@@ -268,9 +266,9 @@ export default function ProductManager({
             </button>
             <button
               onClick={() => setStockFilter("kritis")}
-              className={`px-3 py-1 text-xs font-semibold rounded-full transition-all ${
+              className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
                 stockFilter === "kritis"
-                  ? "bg-rose-50 text-rose-700 shadow-sm border border-rose-200/60"
+                  ? "bg-rose-100/80 text-rose-900 shadow-xs"
                   : "text-rakta-muted hover:text-rakta-navy"
               }`}
             >
@@ -282,9 +280,9 @@ export default function ProductManager({
           <Button
             onClick={handleExportCsv}
             variant="outline"
-            className="rounded-full bg-rakta-card border border-rakta-subtle text-rakta-navy hover:bg-rakta-surface text-xs font-semibold px-4 py-2 flex items-center gap-1.5 shadow-none transition-all cursor-pointer"
+            className="rounded-xl border-rakta-border text-rakta-navy hover:bg-rakta-surface text-xs font-semibold px-3.5 py-2 flex items-center gap-1.5 cursor-pointer"
           >
-            <Download className="w-4 h-4" />
+            <Download className="w-4 h-4 text-rakta-muted" />
             <span>Ekspor CSV</span>
           </Button>
 
@@ -295,7 +293,7 @@ export default function ProductManager({
                 setSelectedProduct(null);
                 setModalMode("add");
               }}
-              className="rounded-full bg-rakta-primary hover:bg-rakta-navy text-white text-xs font-semibold px-4 py-2 flex items-center gap-1.5 shadow-sm transition-all"
+              className="rounded-xl bg-rakta-primary hover:bg-rakta-primary-hover text-white text-xs font-semibold px-4 py-2 flex items-center gap-1.5 cursor-pointer shadow-xs"
             >
               <Plus className="w-4 h-4" />
               <span>Tambah Produk Baru</span>
@@ -305,26 +303,24 @@ export default function ProductManager({
       </div>
 
       {/* Tabel Data Produk */}
-      <div className="bg-rakta-card border border-rakta-subtle/70 rounded-2xl rakta-card-shadow overflow-hidden">
+      <div className="bg-white border border-rakta-border rounded-2xl rakta-card-shadow overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm border-collapse">
             <thead>
-              <tr className="border-b border-rakta-subtle/60 bg-rakta-surface/70 text-xs font-semibold text-rakta-muted uppercase tracking-wider">
+              <tr className="border-b border-rakta-border bg-rakta-surface/80 text-xs font-semibold text-rakta-muted">
                 <th className="px-5 py-3.5">Produk &amp; SKU</th>
-                <th className="px-5 py-3.5">Kategori &amp; Rak</th>
-                <th className="px-5 py-3.5">Supplier Rekanan</th>
-                <th className="px-5 py-3.5 text-right">Harga Beli / Jual</th>
-                <th className="px-5 py-3.5 text-center">Tingkat Stok</th>
-                <th className="px-5 py-3.5 text-right">
-                  Aksi
-                </th>
+                <th className="px-5 py-3.5">Kategori &amp; rak</th>
+                <th className="px-5 py-3.5">Supplier rekanan</th>
+                <th className="px-5 py-3.5 text-right">Harga beli / jual</th>
+                <th className="px-5 py-3.5 text-center">Tingkat stok</th>
+                <th className="px-5 py-3.5 text-right">Aksi</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-rakta-subtle/40">
+            <tbody className="divide-y divide-rakta-border/40">
               {filteredProducts.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-5 py-12 text-center text-rakta-muted">
-                    <Package className="w-10 h-10 mx-auto mb-2 text-rakta-muted/50" />
+                    <Package className="w-10 h-10 mx-auto mb-2 text-rakta-muted/40" />
                     <p className="font-semibold text-rakta-navy text-base">Tidak ada produk ditemukan</p>
                     <p className="text-xs text-rakta-muted mt-1 max-w-sm mx-auto">
                       Coba sesuaikan kata kunci pencarian, filter kategori, atau tab status stok di atas.
@@ -334,45 +330,37 @@ export default function ProductManager({
               ) : (
                 filteredProducts.map((p) => {
                   const statusInfo = hitungStatusStok(p.jumlah_stok, p.stok_minimum, p.stok_low);
-                  const isMenipisOrKritis = Number(p.jumlah_stok) <= Number(p.stok_low);
 
                   return (
                     <tr
                       key={p.id}
-                      className="hover:bg-rakta-surface/40 transition-colors group text-rakta-navy"
+                      className="hover:bg-rakta-surface/50 transition-colors group text-rakta-navy"
                     >
                       {/* Produk & SKU */}
                       <td className="px-5 py-4">
-                        <div className="flex items-start gap-3">
-                          <div className="w-9 h-9 rounded-xl bg-rakta-surface border border-rakta-subtle/80 flex items-center justify-center shrink-0 text-rakta-primary mt-0.5">
-                            <Package className="w-4 h-4" />
+                        <div className="space-y-1">
+                          <span className="font-mono text-xs font-semibold px-2 py-0.5 rounded-md bg-rakta-surface text-rakta-navy border border-rakta-border">
+                            {p.sku}
+                          </span>
+                          <div className="font-semibold text-rakta-navy group-hover:text-rakta-primary transition-colors">
+                            {p.nama}
                           </div>
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <span className="font-mono text-xs font-bold px-2 py-0.5 rounded-md bg-rakta-subtle/40 text-rakta-navy border border-rakta-subtle/70">
-                                {p.sku}
-                              </span>
-                            </div>
-                            <div className="font-semibold text-rakta-navy mt-1 group-hover:text-rakta-primary transition-colors">
-                              {p.nama}
-                            </div>
-                            {p.deskripsi && (
-                              <p className="text-xs text-rakta-muted line-clamp-1 mt-0.5">
-                                {p.deskripsi}
-                              </p>
-                            )}
-                          </div>
+                          {p.deskripsi && (
+                            <p className="text-xs text-rakta-muted line-clamp-1">
+                              {p.deskripsi}
+                            </p>
+                          )}
                         </div>
                       </td>
 
                       {/* Kategori & Rak */}
                       <td className="px-5 py-4">
                         <div className="space-y-1">
-                          <span className="inline-block text-xs font-medium px-2.5 py-0.5 rounded-full bg-rakta-surface text-rakta-navy border border-rakta-subtle/60">
+                          <span className="inline-block text-xs font-medium px-2.5 py-0.5 rounded-md bg-rakta-surface text-rakta-navy border border-rakta-border">
                             {p.category_nama}
                           </span>
                           <div className="flex items-center gap-1 text-xs text-rakta-muted">
-                            <MapPin className="w-3 h-3 text-rakta-primary shrink-0" />
+                            <MapPin className="w-3.5 h-3.5 text-rakta-primary shrink-0" />
                             <span>Rak: {p.lokasi_rak || "Belum Ditentukan"}</span>
                           </div>
                         </div>
@@ -386,17 +374,17 @@ export default function ProductManager({
                             <span>{p.supplier_perusahaan || p.supplier_nama}</span>
                           </div>
                         ) : (
-                          <span className="text-xs text-rakta-muted italic">-</span>
+                          <span className="text-xs text-rakta-muted italic">Tidak ditentukan</span>
                         )}
                       </td>
 
                       {/* Harga Beli & Jual */}
                       <td className="px-5 py-4 text-right">
                         <div className="text-xs">
-                          <div className="font-semibold text-rakta-navy">
+                          <div className="font-semibold text-rakta-navy font-mono tabular-nums">
                             {formatRupiah(p.harga_jual)}
                           </div>
-                          <div className="text-[11px] text-rakta-muted">
+                          <div className="text-[11px] text-rakta-muted font-mono tabular-nums">
                             Beli: {formatRupiah(p.harga_beli)}
                           </div>
                         </div>
@@ -405,31 +393,12 @@ export default function ProductManager({
                       {/* Tingkat Stok & Badge */}
                       <td className="px-5 py-4 text-center">
                         <div className="inline-flex flex-col items-center">
-                          <div className="text-sm font-bold text-rakta-navy">
+                          <div className="text-sm font-bold text-rakta-navy font-mono tabular-nums">
                             {p.jumlah_stok}{" "}
                             <span className="text-xs font-normal text-rakta-muted">{p.unit}</span>
                           </div>
-                          <span
-                            className={`mt-1 inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-0.5 rounded-full border ${
-                              statusInfo.kode === "normal"
-                                ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                                : statusInfo.kode === "menipis"
-                                ? "bg-amber-50 text-amber-700 border-amber-200"
-                                : "bg-rose-50 text-rose-700 border-rose-200"
-                            }`}
-                          >
-                            {statusInfo.kode === "normal" ? (
-                              <CheckCircle2 className="w-3 h-3" />
-                            ) : (
-                              <AlertTriangle className="w-3 h-3" />
-                            )}
-                            {statusInfo.kode === "normal"
-                              ? "Stok Aman"
-                              : statusInfo.kode === "menipis"
-                              ? "Menipis"
-                              : "Kritis"}
-                          </span>
-                          <span className="text-[10px] text-rakta-muted mt-0.5">
+                          <StockBadge status={statusInfo} className="mt-1" />
+                          <span className="text-[10px] text-rakta-muted font-mono tabular-nums mt-0.5">
                             Min: {p.stok_minimum} | Low: {p.stok_low}
                           </span>
                         </div>
@@ -438,12 +407,12 @@ export default function ProductManager({
                       {/* Aksi Berdasarkan Peran Pengguna */}
                       <td className="px-5 py-4 text-right">
                         {(userRole === "admin" || userRole === "warehouse_manager") && (
-                          <div className="flex items-center justify-end gap-1.5">
+                          <div className="flex items-center justify-end gap-1">
                             {/* Tombol Detail & QR */}
                             <Link
                               href={`/products/${p.id}`}
-                              className="p-1.5 text-rakta-muted hover:text-rakta-navy rounded-lg hover:bg-rakta-surface transition-colors"
-                              title="Detail Produk & QR Code SKU"
+                              className="p-1.5 text-rakta-muted hover:text-rakta-navy rounded-xl hover:bg-rakta-surface transition-colors"
+                              title="Detail produk & QR Code"
                             >
                               <QrCode className="w-4 h-4" />
                             </Link>
@@ -451,8 +420,8 @@ export default function ProductManager({
                             {/* Tombol Sesuaikan Stok */}
                             <button
                               onClick={() => openAdjustModal(p)}
-                              className="p-1.5 text-rakta-muted hover:text-rakta-navy rounded-lg hover:bg-rakta-surface transition-colors"
-                              title="Sesuaikan Stok (Stock Opname)"
+                              className="p-1.5 text-rakta-muted hover:text-rakta-navy rounded-xl hover:bg-rakta-surface transition-colors cursor-pointer"
+                              title="Sesuaikan stok (Stock Opname)"
                             >
                               <SlidersHorizontal className="w-4 h-4" />
                             </button>
@@ -460,8 +429,8 @@ export default function ProductManager({
                             {/* Tombol Edit Produk */}
                             <button
                               onClick={() => openEditModal(p)}
-                              className="p-1.5 text-rakta-primary hover:text-rakta-navy rounded-lg hover:bg-rakta-surface transition-colors"
-                              title="Edit Informasi Produk"
+                              className="p-1.5 text-rakta-primary hover:text-rakta-primary-hover rounded-xl hover:bg-rakta-surface transition-colors cursor-pointer"
+                              title="Edit informasi produk"
                             >
                               <Pencil className="w-4 h-4" />
                             </button>
@@ -470,8 +439,8 @@ export default function ProductManager({
                             <button
                               onClick={() => handleDeleteProduct(p)}
                               disabled={isDeleting && deletingId === p.id}
-                              className="p-1.5 text-rose-500 hover:text-rose-700 rounded-lg hover:bg-rose-50 transition-colors disabled:opacity-50"
-                              title="Hapus Produk"
+                              className="p-1.5 text-rose-500 hover:text-rose-700 rounded-xl hover:bg-rose-50 transition-colors disabled:opacity-50 cursor-pointer"
+                              title="Hapus produk"
                             >
                               {isDeleting && deletingId === p.id ? (
                                 <Loader2 className="w-4 h-4 animate-spin text-rose-500" />
@@ -486,14 +455,14 @@ export default function ProductManager({
                           <div className="flex items-center justify-end gap-1.5">
                             <Link
                               href={`/products/${p.id}`}
-                              className="p-1.5 text-rakta-muted hover:text-rakta-navy rounded-lg hover:bg-rakta-surface transition-colors"
-                              title="Detail Produk & QR Code SKU"
+                              className="p-1.5 text-rakta-muted hover:text-rakta-navy rounded-xl hover:bg-rakta-surface transition-colors"
+                              title="Detail produk & QR Code"
                             >
                               <QrCode className="w-4 h-4" />
                             </Link>
                             <Button
                               onClick={() => openAdjustModal(p)}
-                              className="rounded-full text-xs font-semibold px-3 py-1.5 bg-rakta-surface hover:bg-rakta-primary hover:text-white border border-rakta-subtle text-rakta-navy flex items-center gap-1.5 transition-all shadow-none"
+                              className="rounded-xl text-xs font-semibold px-3 py-1.5 bg-rakta-surface hover:bg-rakta-bg border border-rakta-border text-rakta-navy flex items-center gap-1.5 transition-all shadow-none"
                             >
                               <SlidersHorizontal className="w-3.5 h-3.5" />
                               <span>Sesuaikan Stok</span>
@@ -510,12 +479,12 @@ export default function ProductManager({
         </div>
       </div>
 
-      {/* MODAL: Tambah / Edit Produk (Khusus Admin)                                  */}
+      {/* MODAL: Tambah / Edit Produk (Admin & Warehouse Manager) */}
       {(modalMode === "add" || modalMode === "edit") && (
         <div className="fixed inset-0 z-50 bg-rakta-navy/40 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-rakta-card border border-rakta-subtle/80 rounded-2xl w-full max-w-2xl p-6 rakta-card-shadow relative my-8 animate-in fade-in zoom-in-95 duration-200">
+          <div className="bg-white border border-rakta-border rounded-2xl w-full max-w-2xl p-6 rakta-card-shadow relative my-8 animate-in fade-in zoom-in-95 duration-200">
             {/* Header Modal */}
-            <div className="flex items-center justify-between pb-4 border-b border-rakta-subtle/60">
+            <div className="flex items-center justify-between pb-4 border-b border-rakta-border">
               <div>
                 <h3 className="text-lg font-bold text-rakta-navy">
                   {modalMode === "add" ? "Tambah Produk Baru" : "Edit Informasi Produk"}
@@ -531,7 +500,7 @@ export default function ProductManager({
                   setModalMode(null);
                   setSelectedProduct(null);
                 }}
-                className="text-rakta-muted hover:text-rakta-navy p-1.5 rounded-full hover:bg-rakta-surface transition-colors"
+                className="text-rakta-muted hover:text-rakta-navy p-1.5 rounded-xl hover:bg-rakta-surface transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -569,8 +538,8 @@ export default function ProductManager({
                     defaultValue={selectedProduct?.sku || ""}
                     className={`w-full px-3 py-2 text-sm uppercase rounded-xl border text-rakta-navy placeholder:text-rakta-muted/60 focus:outline-none ${
                       modalMode === "edit"
-                        ? "bg-rakta-surface text-rakta-muted cursor-not-allowed border-rakta-subtle/80 font-mono"
-                        : "bg-rakta-card border-rakta-subtle focus:border-rakta-primary focus:ring-2 focus:ring-rakta-primary/20"
+                        ? "bg-rakta-surface text-rakta-muted cursor-not-allowed border-rakta-border font-mono"
+                        : "bg-white border-rakta-border focus:border-rakta-primary focus:ring-2 focus:ring-rakta-primary/20"
                     }`}
                   />
                 </div>
@@ -584,7 +553,7 @@ export default function ProductManager({
                     required
                     placeholder="Contoh: Barcode Scanner 2D Wireless"
                     defaultValue={selectedProduct?.nama || ""}
-                    className="w-full px-3 py-2 text-sm rounded-xl bg-rakta-card border border-rakta-subtle text-rakta-navy placeholder:text-rakta-muted/60 focus:outline-none focus:border-rakta-primary focus:ring-2 focus:ring-rakta-primary/20"
+                    className="w-full px-3 py-2 text-sm rounded-xl bg-white border border-rakta-border text-rakta-navy placeholder:text-rakta-muted/60 focus:outline-none focus:border-rakta-primary focus:ring-2 focus:ring-rakta-primary/20"
                   />
                 </div>
               </div>
@@ -599,7 +568,7 @@ export default function ProductManager({
                     name="category_id"
                     required
                     defaultValue={selectedProduct?.category_id || ""}
-                    className="w-full px-3 py-2 text-sm rounded-xl bg-rakta-card border border-rakta-subtle text-rakta-navy focus:outline-none focus:border-rakta-primary focus:ring-2 focus:ring-rakta-primary/20"
+                    className="w-full px-3 py-2 text-sm rounded-xl bg-white border border-rakta-border text-rakta-navy focus:outline-none focus:border-rakta-primary focus:ring-2 focus:ring-rakta-primary/20"
                   >
                     <option value="" disabled>
                       Pilih Kategori Produk
@@ -618,7 +587,7 @@ export default function ProductManager({
                   <select
                     name="supplier_id"
                     defaultValue={selectedProduct?.supplier_id || ""}
-                    className="w-full px-3 py-2 text-sm rounded-xl bg-rakta-card border border-rakta-subtle text-rakta-navy focus:outline-none focus:border-rakta-primary focus:ring-2 focus:ring-rakta-primary/20"
+                    className="w-full px-3 py-2 text-sm rounded-xl bg-white border border-rakta-border text-rakta-navy focus:outline-none focus:border-rakta-primary focus:ring-2 focus:ring-rakta-primary/20"
                   >
                     <option value="">Tidak ada supplier rekanan default</option>
                     {suppliers.map((s) => (
@@ -640,7 +609,7 @@ export default function ProductManager({
                   rows={2}
                   placeholder="Keterangan singkat mengenai produk, spesifikasi teknis, atau instruksi simpan..."
                   defaultValue={selectedProduct?.deskripsi || ""}
-                  className="w-full px-3 py-2 text-sm rounded-xl bg-rakta-card border border-rakta-subtle text-rakta-navy placeholder:text-rakta-muted/60 focus:outline-none focus:border-rakta-primary focus:ring-2 focus:ring-rakta-primary/20 resize-none"
+                  className="w-full px-3 py-2 text-sm rounded-xl bg-white border border-rakta-border text-rakta-navy placeholder:text-rakta-muted/60 focus:outline-none focus:border-rakta-primary focus:ring-2 focus:ring-rakta-primary/20 resize-none"
                 />
               </div>
 
@@ -658,7 +627,7 @@ export default function ProductManager({
                     required
                     placeholder="0"
                     defaultValue={selectedProduct?.harga_beli ?? 0}
-                    className="w-full px-3 py-2 text-sm rounded-xl bg-rakta-card border border-rakta-subtle text-rakta-navy focus:outline-none focus:border-rakta-primary focus:ring-2 focus:ring-rakta-primary/20"
+                    className="w-full px-3 py-2 text-sm font-mono tabular-nums rounded-xl bg-white border border-rakta-border text-rakta-navy focus:outline-none focus:border-rakta-primary focus:ring-2 focus:ring-rakta-primary/20"
                   />
                 </div>
                 <div>
@@ -673,7 +642,7 @@ export default function ProductManager({
                     required
                     placeholder="0"
                     defaultValue={selectedProduct?.harga_jual ?? 0}
-                    className="w-full px-3 py-2 text-sm rounded-xl bg-rakta-card border border-rakta-subtle text-rakta-navy focus:outline-none focus:border-rakta-primary focus:ring-2 focus:ring-rakta-primary/20"
+                    className="w-full px-3 py-2 text-sm font-mono tabular-nums rounded-xl bg-white border border-rakta-border text-rakta-navy focus:outline-none focus:border-rakta-primary focus:ring-2 focus:ring-rakta-primary/20"
                   />
                 </div>
               </div>
@@ -695,7 +664,7 @@ export default function ProductManager({
                     required
                     placeholder="10"
                     defaultValue={selectedProduct?.stok_minimum ?? 10}
-                    className="w-full px-3 py-2 text-sm rounded-xl bg-rakta-card border border-rakta-subtle text-rakta-navy focus:outline-none focus:border-rakta-primary focus:ring-2 focus:ring-rakta-primary/20"
+                    className="w-full px-3 py-2 text-sm font-mono tabular-nums rounded-xl bg-white border border-rakta-border text-rakta-navy focus:outline-none focus:border-rakta-primary focus:ring-2 focus:ring-rakta-primary/20"
                   />
                   <p className="text-[10px] text-rakta-muted mt-1">Batas status darurat/kritis</p>
                 </div>
@@ -710,9 +679,9 @@ export default function ProductManager({
                     required
                     placeholder="20"
                     defaultValue={selectedProduct?.stok_low ?? 20}
-                    className="w-full px-3 py-2 text-sm rounded-xl bg-rakta-card border border-rakta-subtle text-rakta-navy focus:outline-none focus:border-rakta-primary focus:ring-2 focus:ring-rakta-primary/20"
+                    className="w-full px-3 py-2 text-sm font-mono tabular-nums rounded-xl bg-white border border-rakta-border text-rakta-navy focus:outline-none focus:border-rakta-primary focus:ring-2 focus:ring-rakta-primary/20"
                   />
-                  <p className="text-[10px] text-rakta-muted mt-1">Harus &gt; stok minimum</p>
+                  <p className="text-[10px] text-rakta-muted mt-1">Harus lebih besar dari stok minimum</p>
                 </div>
                 {modalMode === "add" && (
                   <div>
@@ -725,7 +694,7 @@ export default function ProductManager({
                       min="0"
                       placeholder="0"
                       defaultValue="0"
-                      className="w-full px-3 py-2 text-sm rounded-xl bg-rakta-card border border-rakta-subtle text-rakta-navy focus:outline-none focus:border-rakta-primary focus:ring-2 focus:ring-rakta-primary/20"
+                      className="w-full px-3 py-2 text-sm font-mono tabular-nums rounded-xl bg-white border border-rakta-border text-rakta-navy focus:outline-none focus:border-rakta-primary focus:ring-2 focus:ring-rakta-primary/20"
                     />
                     <p className="text-[10px] text-rakta-muted mt-1">Jumlah unit saat ini</p>
                   </div>
@@ -741,7 +710,7 @@ export default function ProductManager({
                   <select
                     name="unit"
                     defaultValue={selectedProduct?.unit || "pcs"}
-                    className="w-full px-3 py-2 text-sm rounded-xl bg-rakta-card border border-rakta-subtle text-rakta-navy focus:outline-none focus:border-rakta-primary focus:ring-2 focus:ring-rakta-primary/20"
+                    className="w-full px-3 py-2 text-sm rounded-xl bg-white border border-rakta-border text-rakta-navy focus:outline-none focus:border-rakta-primary focus:ring-2 focus:ring-rakta-primary/20"
                   >
                     <option value="pcs">pcs (Pieces)</option>
                     <option value="unit">unit (Unit Barang)</option>
@@ -762,13 +731,13 @@ export default function ProductManager({
                     name="lokasi_rak"
                     placeholder="Contoh: A-01-02"
                     defaultValue={selectedProduct?.lokasi_rak || ""}
-                    className="w-full px-3 py-2 text-sm rounded-xl bg-rakta-card border border-rakta-subtle text-rakta-navy placeholder:text-rakta-muted/60 focus:outline-none focus:border-rakta-primary focus:ring-2 focus:ring-rakta-primary/20"
+                    className="w-full px-3 py-2 text-sm rounded-xl bg-white border border-rakta-border text-rakta-navy placeholder:text-rakta-muted/60 focus:outline-none focus:border-rakta-primary focus:ring-2 focus:ring-rakta-primary/20"
                   />
                 </div>
               </div>
 
               {/* Tombol Aksi Modal */}
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-rakta-subtle/60">
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-rakta-border">
                 <Button
                   type="button"
                   variant="outline"
@@ -776,14 +745,14 @@ export default function ProductManager({
                     setModalMode(null);
                     setSelectedProduct(null);
                   }}
-                  className="rounded-full text-xs font-semibold px-4 py-2"
+                  className="rounded-xl text-xs font-semibold px-4 py-2 border-rakta-border text-rakta-navy hover:bg-rakta-surface"
                 >
                   Batal
                 </Button>
                 <Button
                   type="submit"
                   disabled={isAdding || isEditing}
-                  className="rounded-full bg-rakta-primary hover:bg-rakta-navy text-white text-xs font-semibold px-5 py-2 flex items-center gap-1.5 shadow-sm"
+                  className="rounded-xl bg-rakta-primary hover:bg-rakta-primary-hover text-white text-xs font-semibold px-5 py-2 flex items-center gap-1.5 shadow-xs"
                 >
                   {(isAdding || isEditing) && <Loader2 className="w-4 h-4 animate-spin" />}
                   <span>
@@ -802,25 +771,19 @@ export default function ProductManager({
         </div>
       )}
 
-      {/* MODAL: Sesuaikan Stok (Stock Opname)                                       */}
-      {/* Hak Akses: Staff Gudang & Admin                                            */}
+      {/* MODAL: Sesuaikan Stok (Stock Opname) */}
       {modalMode === "adjust" && selectedProduct && (
         <div className="fixed inset-0 z-50 bg-rakta-navy/40 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-rakta-card border border-rakta-subtle/80 rounded-2xl w-full max-w-lg p-6 rakta-card-shadow relative my-8 animate-in fade-in zoom-in-95 duration-200">
+          <div className="bg-white border border-rakta-border rounded-2xl w-full max-w-lg p-6 rakta-card-shadow relative my-8 animate-in fade-in zoom-in-95 duration-200">
             {/* Header Modal */}
-            <div className="flex items-center justify-between pb-4 border-b border-rakta-subtle/60">
-              <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-full bg-rakta-surface border border-rakta-subtle flex items-center justify-center text-rakta-primary">
-                  <SlidersHorizontal className="w-4 h-4" />
-                </div>
-                <div>
-                  <h3 className="text-base font-bold text-rakta-navy">
-                    Sesuaikan Stok Fisik (Stock Opname)
-                  </h3>
-                  <p className="text-xs text-rakta-muted">
-                    Rekonsiliasi stok sistem dengan hasil audit fisik gudang
-                  </p>
-                </div>
+            <div className="flex items-center justify-between pb-4 border-b border-rakta-border">
+              <div>
+                <h3 className="text-base font-bold text-rakta-navy">
+                  Sesuaikan Stok Fisik (Stock Opname)
+                </h3>
+                <p className="text-xs text-rakta-muted mt-0.5">
+                  Rekonsiliasi stok sistem dengan hasil audit fisik gudang
+                </p>
               </div>
               <button
                 onClick={() => {
@@ -828,7 +791,7 @@ export default function ProductManager({
                   setSelectedProduct(null);
                   setPhysicalStockInput("");
                 }}
-                className="text-rakta-muted hover:text-rakta-navy p-1.5 rounded-full hover:bg-rakta-surface transition-colors"
+                className="text-rakta-muted hover:text-rakta-navy p-1.5 rounded-xl hover:bg-rakta-surface transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -843,16 +806,16 @@ export default function ProductManager({
             )}
 
             {/* Ringkasan Produk */}
-            <div className="mt-4 p-3.5 rounded-xl bg-rakta-surface/70 border border-rakta-subtle/70 space-y-1.5 text-xs">
+            <div className="mt-4 p-3.5 rounded-xl bg-rakta-surface border border-rakta-border space-y-1.5 text-xs">
               <div className="flex items-center justify-between">
                 <span className="font-bold text-rakta-navy text-sm">{selectedProduct.nama}</span>
-                <span className="font-mono text-xs px-2 py-0.5 rounded bg-rakta-card text-rakta-navy border border-rakta-subtle font-semibold">
+                <span className="font-mono text-xs px-2 py-0.5 rounded bg-white text-rakta-navy border border-rakta-border font-semibold">
                   {selectedProduct.sku}
                 </span>
               </div>
-              <div className="flex items-center justify-between text-rakta-muted pt-1 border-t border-rakta-subtle/40">
+              <div className="flex items-center justify-between text-rakta-muted pt-1 border-t border-rakta-border/60">
                 <span>Stok Sistem Saat Ini:</span>
-                <span className="font-semibold text-rakta-navy">
+                <span className="font-semibold text-rakta-navy font-mono tabular-nums">
                   {selectedProduct.jumlah_stok} {selectedProduct.unit}
                 </span>
               </div>
@@ -882,7 +845,7 @@ export default function ProductManager({
                     value={physicalStockInput}
                     onChange={(e) => setPhysicalStockInput(e.target.value)}
                     placeholder="Masukkan jumlah fisik hasil hitung..."
-                    className="w-full px-3 py-2 text-sm rounded-xl bg-rakta-card border border-rakta-subtle text-rakta-navy focus:outline-none focus:border-rakta-primary focus:ring-2 focus:ring-rakta-primary/20"
+                    className="w-full px-3 py-2 text-sm font-mono tabular-nums rounded-xl bg-white border border-rakta-border text-rakta-navy focus:outline-none focus:border-rakta-primary focus:ring-2 focus:ring-rakta-primary/20"
                   />
                   <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-semibold text-rakta-muted">
                     {selectedProduct.unit}
@@ -894,17 +857,17 @@ export default function ProductManager({
                   {physicalStockInput === "" ? (
                     <span className="text-rakta-muted">Masukkan jumlah fisik di atas.</span>
                   ) : selisihStok > 0 ? (
-                    <span className="font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-200 inline-flex items-center gap-1">
+                    <span className="font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-200 inline-flex items-center gap-1 font-mono tabular-nums">
                       <CheckCircle2 className="w-3.5 h-3.5" />
                       Selisih: +{selisihStok} {selectedProduct.unit} (Barang Masuk / Ditemukan Lebih)
                     </span>
                   ) : selisihStok < 0 ? (
-                    <span className="font-semibold text-rose-700 bg-rose-50 px-2.5 py-1 rounded-md border border-rose-200 inline-flex items-center gap-1">
+                    <span className="font-semibold text-rose-700 bg-rose-50 px-2.5 py-1 rounded-md border border-rose-200 inline-flex items-center gap-1 font-mono tabular-nums">
                       <AlertTriangle className="w-3.5 h-3.5" />
                       Selisih: {selisihStok} {selectedProduct.unit} (Barang Keluar / Rusak / Hilang)
                     </span>
                   ) : (
-                    <span className="font-medium text-rakta-navy bg-rakta-surface px-2.5 py-1 rounded-md border border-rakta-subtle inline-block">
+                    <span className="font-medium text-rakta-navy bg-rakta-surface px-2.5 py-1 rounded-md border border-rakta-border inline-block">
                       Stok sama dengan catatan sistem (Tidak ada selisih).
                     </span>
                   )}
@@ -920,7 +883,7 @@ export default function ProductManager({
                   name="alasan"
                   required
                   defaultValue="Pengecekan Fisik Rutin (Stock Opname)"
-                  className="w-full px-3 py-2 text-sm rounded-xl bg-rakta-card border border-rakta-subtle text-rakta-navy focus:outline-none focus:border-rakta-primary focus:ring-2 focus:ring-rakta-primary/20"
+                  className="w-full px-3 py-2 text-sm rounded-xl bg-white border border-rakta-border text-rakta-navy focus:outline-none focus:border-rakta-primary focus:ring-2 focus:ring-rakta-primary/20"
                 >
                   <option value="Pengecekan Fisik Rutin (Stock Opname)">
                     Pengecekan Fisik Rutin (Stock Opname)
@@ -947,12 +910,12 @@ export default function ProductManager({
                   name="catatan"
                   rows={2}
                   placeholder="Contoh: Ditemukan 2 unit retak saat audit mingguan di rak B-02..."
-                  className="w-full px-3 py-2 text-sm rounded-xl bg-rakta-card border border-rakta-subtle text-rakta-navy placeholder:text-rakta-muted/60 focus:outline-none focus:border-rakta-primary focus:ring-2 focus:ring-rakta-primary/20 resize-none"
+                  className="w-full px-3 py-2 text-sm rounded-xl bg-white border border-rakta-border text-rakta-navy placeholder:text-rakta-muted/60 focus:outline-none focus:border-rakta-primary focus:ring-2 focus:ring-rakta-primary/20 resize-none"
                 />
               </div>
 
               {/* Tombol Aksi */}
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-rakta-subtle/60">
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-rakta-border">
                 <Button
                   type="button"
                   variant="outline"
@@ -961,14 +924,14 @@ export default function ProductManager({
                     setSelectedProduct(null);
                     setPhysicalStockInput("");
                   }}
-                  className="rounded-full text-xs font-semibold px-4 py-2"
+                  className="rounded-xl text-xs font-semibold px-4 py-2 border-rakta-border text-rakta-navy hover:bg-rakta-surface"
                 >
                   Batal
                 </Button>
                 <Button
                   type="submit"
                   disabled={isAdjusting}
-                  className="rounded-full bg-rakta-primary hover:bg-rakta-navy text-white text-xs font-semibold px-5 py-2 flex items-center gap-1.5 shadow-sm"
+                  className="rounded-xl bg-rakta-primary hover:bg-rakta-primary-hover text-white text-xs font-semibold px-5 py-2 flex items-center gap-1.5 shadow-xs"
                 >
                   {isAdjusting && <Loader2 className="w-4 h-4 animate-spin" />}
                   <span>{isAdjusting ? "Menyimpan Transaksi..." : "Simpan Penyesuaian"}</span>
@@ -978,6 +941,7 @@ export default function ProductManager({
           </div>
         </div>
       )}
+
       {/* Modal Konfirmasi Hapus Produk */}
       <ConfirmModal
         isOpen={Boolean(confirmDeleteProd)}
@@ -986,7 +950,7 @@ export default function ProductManager({
         title="Hapus Master Produk"
         message={
           confirmDeleteProd?.jumlah_stok > 0
-            ? `PERINGATAN: Produk "${confirmDeleteProd?.nama}" (${confirmDeleteProd?.sku}) saat ini masih memiliki sisa stok fisik sebanyak ${confirmDeleteProd.jumlah_stok} ${confirmDeleteProd.unit} di rak gudang!\n\nApakah Anda yakin ingin tetap menghapus master produk ini? Produk yang memiliki riwayat transaksi operasional tidak dapat dihapus.`
+            ? `Peringatan: Produk "${confirmDeleteProd?.nama}" (${confirmDeleteProd?.sku}) saat ini masih memiliki sisa stok fisik sebanyak ${confirmDeleteProd.jumlah_stok} ${confirmDeleteProd.unit} di rak gudang.\n\nApakah Anda yakin ingin tetap menghapus master produk ini? Produk yang memiliki riwayat transaksi operasional tidak dapat dihapus.`
             : `Apakah Anda yakin ingin menghapus produk "${confirmDeleteProd?.nama}" (${confirmDeleteProd?.sku}) dari sistem?\n\nPerhatian: Produk yang sudah memiliki riwayat transaksi tidak dapat dihapus.`
         }
         confirmText="Hapus Produk"

@@ -2,11 +2,12 @@
 
 import { useActionState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { registerSupplierAction } from "@/app/actions/auth";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/Card";
-import { UserPlus, Building2, AlertCircle } from "lucide-react";
+import { AlertCircle } from "lucide-react";
 
 export default function RegisterSupplierPage() {
   const [state, formAction, isPending] = useActionState(registerSupplierAction, null);
@@ -15,13 +16,23 @@ export default function RegisterSupplierPage() {
     <div className="min-h-screen flex items-center justify-center p-4 sm:p-6 lg:p-8">
       <div className="w-full max-w-lg space-y-6">
         
-        {/* Header */}
-        <div className="text-center space-y-2">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-rakta-primary text-white font-bold text-xl shadow-sm mb-1">
-            R
+        {/* Header Identitas Brand & Logo Mandiri */}
+        <div className="text-center space-y-1">
+          <div className="flex justify-center mb-3">
+            <Image
+              src="/logo.svg"
+              alt="Logo RAKTA"
+              width={64}
+              height={64}
+              priority
+              className="w-16 h-16 rounded-2xl shadow-xs"
+            />
           </div>
-          <h1 className="text-2xl font-bold tracking-tight text-rakta-navy">
-            Pendaftaran Rekanan Supplier
+          <span className="text-xs font-semibold text-rakta-primary tracking-widest uppercase">
+            Pendaftaran Rekanan Baru
+          </span>
+          <h1 className="text-3xl font-extrabold tracking-tight text-rakta-navy">
+            RAKTA
           </h1>
           <p className="text-xs text-rakta-muted">
             Bergabung sebagai mitra logistik dan pemasok barang resmi RAKTA
@@ -29,14 +40,13 @@ export default function RegisterSupplierPage() {
         </div>
 
         {/* Card Formulir Registrasi */}
-        <Card>
+        <Card className="rounded-2xl border-rakta-border rakta-card-shadow">
           <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle>Informasi Perusahaan &amp; Kontak</CardTitle>
-              <Building2 className="w-5 h-5 text-rakta-primary" />
-            </div>
-            <CardDescription>
-              Isi data perusahaan dengan lengkap. Akun akan ditinjau oleh tim kami sebelum aktif.
+            <CardTitle className="text-lg font-bold text-rakta-navy">
+              Informasi Perusahaan &amp; Kontak
+            </CardTitle>
+            <CardDescription className="text-xs text-rakta-muted mt-1">
+              Isi data perusahaan dengan lengkap. Akun akan ditinjau oleh tim administrator sebelum aktif.
             </CardDescription>
           </CardHeader>
 
@@ -44,8 +54,8 @@ export default function RegisterSupplierPage() {
             <CardContent className="space-y-3.5">
               {/* Notifikasi Error */}
               {state?.error && (
-                <div className="flex items-start gap-2.5 p-3.5 bg-red-50 border border-red-200 text-red-700 rounded-xl text-xs">
-                  <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-red-500" />
+                <div className="flex items-start gap-2.5 p-3.5 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl text-xs">
+                  <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-rose-600" />
                   <span>{state.error}</span>
                 </div>
               )}
@@ -112,10 +122,10 @@ export default function RegisterSupplierPage() {
               <Button
                 type="submit"
                 variant="primary"
-                className="w-full"
+                className="w-full rounded-xl bg-rakta-primary hover:bg-rakta-primary-hover text-white font-semibold py-2.5 text-sm cursor-pointer shadow-xs"
                 isLoading={isPending}
               >
-                Ajukan Pendaftaran <UserPlus className="w-4 h-4 ml-1" />
+                Ajukan Pendaftaran Rekanan
               </Button>
 
               <div className="text-center text-xs text-rakta-muted pt-2">

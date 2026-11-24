@@ -2,11 +2,12 @@
 
 import { useActionState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { loginAction } from "@/app/actions/auth";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/Card";
-import { LogIn, ArrowRight, ShieldCheck, AlertCircle } from "lucide-react";
+import { AlertCircle } from "lucide-react";
 
 export default function LoginPage() {
   const [state, formAction, isPending] = useActionState(loginAction, null);
@@ -15,12 +16,22 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center p-4 sm:p-6 lg:p-8">
       <div className="w-full max-w-md space-y-6">
         
-        {/* Header */}
-        <div className="text-center space-y-2">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-rakta-primary text-white font-bold text-xl shadow-sm mb-1">
-            R
+        {/* Header Identitas Brand & Logo Mandiri */}
+        <div className="text-center space-y-1">
+          <div className="flex justify-center mb-3">
+            <Image
+              src="/logo.svg"
+              alt="Logo RAKTA"
+              width={64}
+              height={64}
+              priority
+              className="w-16 h-16 rounded-2xl shadow-xs"
+            />
           </div>
-          <h1 className="text-2xl font-bold tracking-tight text-rakta-navy">
+          <span className="text-xs font-semibold text-rakta-primary tracking-widest uppercase">
+            Warehouse Management System
+          </span>
+          <h1 className="text-3xl font-extrabold tracking-tight text-rakta-navy">
             RAKTA
           </h1>
           <p className="text-xs text-rakta-muted">
@@ -29,23 +40,22 @@ export default function LoginPage() {
         </div>
 
         {/* Card Login */}
-        <Card>
+        <Card className="rounded-2xl border-rakta-border rakta-card-shadow">
           <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle>Masuk ke Akun</CardTitle>
-              <LogIn className="w-5 h-5 text-rakta-primary" />
-            </div>
-            <CardDescription>
+            <CardTitle className="text-lg font-bold text-rakta-navy">
+              Masuk ke Akun
+            </CardTitle>
+            <CardDescription className="text-xs text-rakta-muted mt-1">
               Gunakan email terdaftar dan kata sandi Anda untuk mengakses sistem.
             </CardDescription>
           </CardHeader>
 
           <form action={formAction}>
-            <CardContent>
+            <CardContent className="space-y-4">
               {/* Notifikasi Error jika login gagal */}
               {state?.error && (
-                <div className="flex items-start gap-2.5 p-3.5 bg-red-50 border border-red-200 text-red-700 rounded-xl text-xs">
-                  <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-red-500" />
+                <div className="flex items-start gap-2.5 p-3.5 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl text-xs">
+                  <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-rose-600" />
                   <span>{state.error}</span>
                 </div>
               )}
@@ -75,10 +85,10 @@ export default function LoginPage() {
               <Button
                 type="submit"
                 variant="primary"
-                className="w-full"
+                className="w-full rounded-xl bg-rakta-primary hover:bg-rakta-primary-hover text-white font-semibold py-2.5 text-sm cursor-pointer shadow-xs"
                 isLoading={isPending}
               >
-                Masuk Sekarang <ArrowRight className="w-4 h-4 ml-1" />
+                Masuk Sekarang
               </Button>
 
               <div className="text-center text-xs text-rakta-muted pt-2">
