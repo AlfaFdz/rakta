@@ -9,6 +9,8 @@ import {
   approveOutgoingTransactionAction,
   rejectOutgoingTransactionAction,
   dispatchOutgoingTransactionAction,
+  updatePendingOutgoingTransactionAction,
+  deletePendingOutgoingTransactionAction,
 } from "@/app/actions/transactions";
 import Button from "@/components/ui/Button";
 import ConfirmModal from "@/components/ConfirmModal";
@@ -37,6 +39,9 @@ import {
   PackageCheck,
   FileText,
   Download,
+  Pencil,
+  Trash2,
+  Image as ImageIcon,
 } from "lucide-react";
 
 export default function TransactionManager({
@@ -48,11 +53,13 @@ export default function TransactionManager({
 }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState("all"); // 'all' | 'incoming' | 'outgoing' | 'adjustment'
-  const [statusFilter, setStatusFilter] = useState("all"); // 'all' | 'pending' | 'approved' | 'completed' | 'rejected'
+  const [statusFilter, setStatusFilter] = useState("all"); // 'all' | 'pending' | 'approved' | 'shipped' | 'completed' | 'rejected'
   
-  const [modalMode, setModalMode] = useState(null); // 'out' | 'incoming_po' | 'reject' | null
+  const [modalMode, setModalMode] = useState(null); // 'out' | 'edit_out' | 'incoming_po' | 'reject' | null
   const [selectedReceivedOrder, setSelectedReceivedOrder] = useState(null);
   const [selectedTransactionForReject, setSelectedTransactionForReject] = useState(null);
+  const [selectedTrxForEdit, setSelectedTrxForEdit] = useState(null);
+  const [confirmDeleteTrx, setConfirmDeleteTrx] = useState(null);
   const [incomingNotesInput, setIncomingNotesInput] = useState("");
   const [rejectionReasonInput, setRejectionReasonInput] = useState("");
   const [feedback, setFeedback] = useState(null);
@@ -113,6 +120,33 @@ export default function TransactionManager({
     }
     return res;
   }, null);
+
+  // Action state untuk Edit Barang Keluar Pending
+  const [editOutState, editOutAction, isEditOutProgress] = useActionState(async (prev, formData) => {
+    const res = await updatePendingOutgoingTransactionAction(prev, formData);
+    if (res?.success) {
+      setModalMode(null);
+      setSelectedTrxForEdit(null);
+      setFeedback({ type: "success", message: res.message });
+      return null;
+    }
+    return res;
+  }, null);
+
+  // Handler Hapus Transaksi Pending
+  const handleExecuteDeleteTrx = () => {
+    if (!confirmDeleteTrx) return;
+    const trxId = confirmDeleteTrx.id;
+    startTransition(async () => {
+      const res = await deletePendingOutgoingTransactionAction(trxId);
+      if (res?.success) {
+        setFeedback({ type: "success", message: res.message });
+      } else {
+        setFeedback({ type: "error", message: res?.error || "Gagal membatalkan transaksi." });
+      }
+      setConfirmDeleteTrx(null);
+    });
+  };
 
   // Handler: Staff Gudang membuat dokumen barang masuk dari PO yang sudah berstatus 'received'
   const handleCreateIncomingFromPO = () => {
@@ -355,6 +389,7 @@ export default function TransactionManager({
             <option value="all">Semua Status</option>
             <option value="pending">Menunggu Persetujuan</option>
             <option value="approved">Disetujui / Packing</option>
+            <option value="shipped">Terkirim (Shipped)</option>
             <option value="completed">Selesai (Completed)</option>
             <option value="rejected">Ditolak</option>
           </select>
@@ -395,10 +430,10 @@ export default function TransactionManager({
               </div>
               <div>
                 <h2 className="text-base font-bold text-rakta-navy">
-                  Pesanan Tiba di Gudang (Siap Dibuatkan Dokumen Masuk)
+                  Pesanan Tiba &amp; Pemeriksaan Fisik (Inspecting)
                 </h2>
                 <p className="text-xs text-rakta-muted">
-                  Pesanan PO yang telah ditandai tiba oleh Warehouse Manager. Buat dokumen transaksi masuk agar dapat disetujui untuk penambahan stok.
+                  Pesanan PO yang telah tiba di gudang. Lakukan cek fisik, periksa bukti foto, dan buat dokumen transaksi masuk agar dapat disetujui untuk penambahan stok.
                 </p>
               </div>
             </div>
@@ -409,7 +444,7 @@ export default function TransactionManager({
 
           {receivedOrders.length === 0 ? (
             <div className="p-5 rounded-xl bg-rakta-surface/60 border border-dashed border-rakta-subtle text-center text-xs text-rakta-muted">
-              Tidak ada pesanan restock berstatus <span className="font-semibold text-emerald-700">Received</span> yang belum diproses dokumen masuknya.
+              Tidak ada pesanan restock berstatus <span className="font-semibold text-emerald-700">Inspecting / Received</span> yang belum diproses dokumen masuknya.
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -445,6 +480,20 @@ export default function TransactionManager({
                           +{ro.qty} {ro.unit}
                         </span>
                       </div>
+
+                      {ro.foto_bukti_url && (
+                        <div className="mt-2 pt-2 border-t border-rakta-subtle/40">
+                          <a
+                            href={ro.foto_bukti_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-[11px] font-semibold text-rakta-primary hover:underline"
+                          >
+                            <ImageIcon className="w-3.5 h-3.5" />
+                            <span>Lihat Bukti Foto Kedatangan</span>
+                          </a>
+                        </div>
+                      )}
                     </div>
 
                     <div className="pt-2">
@@ -632,6 +681,12 @@ export default function TransactionManager({
                             {isKeluar ? "Disetujui (Packing)" : "Disetujui"}
                           </span>
                         )}
+                        {t.status === "shipped" && (
+                          <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            <CheckCircle2 className="w-3 h-3" />
+                            Terkirim (Shipped)
+                          </span>
+                        )}
                         {t.status === "completed" && (
                           <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
                             <CheckCircle2 className="w-3 h-3" />
@@ -697,7 +752,7 @@ export default function TransactionManager({
                               </span>
                             )}
 
-                            {(t.status === "completed" || (t.status === "approved" && isMasuk) || t.status === "rejected") && (
+                            {(t.status === "completed" || t.status === "shipped" || (t.status === "approved" && isMasuk) || t.status === "rejected") && (
                               <span className="text-xs text-rakta-muted font-medium bg-rakta-surface px-2.5 py-1 rounded-full border border-rakta-subtle/60">
                                 Selesai
                               </span>
@@ -725,13 +780,39 @@ export default function TransactionManager({
                               </button>
                             )}
 
-                            {t.status === "pending" && (
+                            {/* Transaksi Pending Keluar: Staff dapat edit & batalkan */}
+                            {t.status === "pending" && isKeluar && (
+                              <div className="flex items-center gap-1">
+                                <button
+                                  onClick={() => {
+                                    setSelectedTrxForEdit(t);
+                                    setModalMode("edit_out");
+                                  }}
+                                  className="p-1 rounded-lg text-rakta-navy hover:bg-rakta-surface border border-rakta-subtle transition-colors cursor-pointer"
+                                  title="Edit Pengajuan Keluar"
+                                >
+                                  <Pencil className="w-3.5 h-3.5 text-rakta-muted hover:text-rakta-navy" />
+                                </button>
+                                <button
+                                  onClick={() => setConfirmDeleteTrx(t)}
+                                  className="p-1 rounded-lg text-rose-600 hover:bg-rose-50 border border-rose-200 transition-colors cursor-pointer"
+                                  title="Batalkan Pengajuan Keluar"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                                <span className="text-xs text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
+                                  Pending
+                                </span>
+                              </div>
+                            )}
+
+                            {t.status === "pending" && !isKeluar && (
                               <span className="text-xs text-amber-700 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-200">
                                 Menunggu Persetujuan
                               </span>
                             )}
 
-                            {(t.status === "completed" || (t.status === "approved" && isMasuk) || t.status === "rejected") && (
+                            {(t.status === "completed" || t.status === "shipped" || (t.status === "approved" && isMasuk) || t.status === "rejected") && (
                               <span className="text-xs text-rakta-muted font-medium bg-rakta-surface px-2.5 py-1 rounded-full border border-rakta-subtle/60">
                                 Selesai
                               </span>
@@ -798,17 +879,31 @@ export default function TransactionManager({
                     +{selectedReceivedOrder.qty} {selectedReceivedOrder.unit}
                   </span>
                 </div>
+                {selectedReceivedOrder.foto_bukti_url && (
+                  <div className="flex items-center justify-between pt-1 border-t border-rakta-subtle/50">
+                    <span className="text-rakta-muted">Bukti Foto:</span>
+                    <a
+                      href={selectedReceivedOrder.foto_bukti_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-rakta-primary font-semibold hover:underline flex items-center gap-1"
+                    >
+                      <ImageIcon className="w-3.5 h-3.5" />
+                      Lihat Foto Kedatangan
+                    </a>
+                  </div>
+                )}
               </div>
 
               <div>
                 <label className="block text-xs font-semibold text-rakta-navy mb-1">
-                  Catatan Pemeriksaan Fisik (Opsional)
+                  Laporan Hasil Pemeriksaan Fisik Gudang (Opsional)
                 </label>
                 <textarea
                   rows={3}
                   value={incomingNotesInput}
                   onChange={(e) => setIncomingNotesInput(e.target.value)}
-                  placeholder="Contoh: Dus dalam keadaan baik, barcode sesuai dan segel utuh."
+                  placeholder="Contoh: Kondisi fisik barang utuh, barcode sesuai, segel pabrik aman, tidak ada cacat atau kerusakan..."
                   className="w-full px-3.5 py-2 text-xs rounded-xl bg-rakta-card border border-rakta-subtle text-rakta-navy placeholder:text-rakta-muted/60 focus:outline-none focus:border-rakta-primary focus:ring-2 focus:ring-rakta-primary/20 transition-all resize-none"
                 />
               </div>
@@ -816,10 +911,10 @@ export default function TransactionManager({
               <div className="p-3 rounded-xl bg-amber-50 border border-amber-200/80 text-[11px] text-amber-800 space-y-1">
                 <p className="font-semibold flex items-center gap-1">
                   <Clock className="w-3.5 h-3.5 text-amber-600" />
-                  Alur Barang Masuk 2 Tahap:
+                  Alur Pemeriksaan &amp; Persetujuan:
                 </p>
                 <p>
-                  Setelah dokumen dibuat (status: Pending), Warehouse Manager akan meninjau dan menyetujuinya. Stok barang baru akan bertambah secara atomik tepat saat disetujui.
+                  Setelah dokumen dibuat (status: Pending), Warehouse Manager akan meninjau laporan fisik. Jika Disetujui, stok bertambah secara atomik dan PO menjadi Received. Jika Ditolak karena cacat/rusak, PO berubah menjadi Returned untuk pengajuan klaim refund.
                 </p>
               </div>
 
@@ -1052,6 +1147,145 @@ export default function TransactionManager({
           </div>
         </div>
       )}
+      {/* MODAL: Edit Pengajuan Barang Keluar (Staff Gudang) */}
+      {modalMode === "edit_out" && selectedTrxForEdit && (
+        <div className="fixed inset-0 z-50 bg-rakta-navy/40 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-rakta-card border border-rakta-subtle/80 rounded-2xl w-full max-w-lg p-6 rakta-card-shadow relative my-8 animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between pb-4 border-b border-rakta-subtle/60">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center">
+                  <Pencil className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-base text-rakta-navy">Edit Pengajuan Barang Keluar</h3>
+                  <p className="text-xs text-rakta-muted">Nomor Transaksi: {selectedTrxForEdit.nomor_transaksi}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setModalMode(null);
+                  setSelectedTrxForEdit(null);
+                }}
+                className="text-rakta-muted hover:text-rakta-navy p-1 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {editOutState?.error && (
+              <div className="mt-4 p-3 bg-rose-50 border border-rose-200 text-rose-800 rounded-xl text-xs flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                <span>{editOutState.error}</span>
+              </div>
+            )}
+
+            <form action={editOutAction} className="mt-4 space-y-4">
+              <input type="hidden" name="transaction_id" value={selectedTrxForEdit.id} />
+              <input
+                type="hidden"
+                name="product_id"
+                value={
+                  selectedTrxForEdit.single_product_id ||
+                  (selectedTrxForEdit.items && selectedTrxForEdit.items[0]?.product_id) ||
+                  ""
+                }
+              />
+
+              <div>
+                <label className="block text-xs font-semibold text-rakta-navy mb-1">
+                  Produk (Tidak dapat diubah)
+                </label>
+                <div className="w-full px-3.5 py-2 text-xs rounded-xl bg-rakta-surface border border-rakta-subtle text-rakta-navy font-medium">
+                  {selectedTrxForEdit.single_product_nama ||
+                    (selectedTrxForEdit.items && selectedTrxForEdit.items[0]?.product_nama) ||
+                    "-"}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div>
+                  <label className="block text-xs font-semibold text-rakta-navy mb-1">
+                    Kuantitas Keluar <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    name="qty"
+                    min="1"
+                    defaultValue={
+                      selectedTrxForEdit.quantity ||
+                      (selectedTrxForEdit.items && selectedTrxForEdit.items[0]?.qty) ||
+                      1
+                    }
+                    required
+                    className="w-full px-3.5 py-2 text-xs rounded-xl bg-rakta-card border border-rakta-subtle text-rakta-navy focus:outline-none focus:border-rakta-primary focus:ring-2 focus:ring-rakta-primary/20 transition-all"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-rakta-navy mb-1">
+                    Nama Tujuan / Customer <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="tujuan_customer"
+                    defaultValue={selectedTrxForEdit.tujuan_customer || ""}
+                    required
+                    placeholder="Contoh: Toko Elektronik Jaya"
+                    className="w-full px-3.5 py-2 text-xs rounded-xl bg-rakta-card border border-rakta-subtle text-rakta-navy focus:outline-none focus:border-rakta-primary focus:ring-2 focus:ring-rakta-primary/20 transition-all"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-rakta-navy mb-1">
+                  Catatan / Keterangan Pengeluaran
+                </label>
+                <textarea
+                  name="catatan"
+                  rows={2}
+                  defaultValue={selectedTrxForEdit.catatan || selectedTrxForEdit.notes || ""}
+                  placeholder="Keterangan pengiriman barang..."
+                  className="w-full px-3.5 py-2 text-xs rounded-xl bg-rakta-card border border-rakta-subtle text-rakta-navy placeholder:text-rakta-muted/60 focus:outline-none focus:border-rakta-primary focus:ring-2 focus:ring-rakta-primary/20 transition-all resize-none"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-rakta-subtle/60">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => {
+                    setModalMode(null);
+                    setSelectedTrxForEdit(null);
+                  }}
+                  disabled={isEditOutProgress}
+                >
+                  Batal
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={isEditOutProgress}
+                  className="bg-rakta-primary hover:bg-rakta-navy text-white"
+                >
+                  {isEditOutProgress ? "Menyimpan..." : "Simpan Perubahan"}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Konfirmasi Hapus Transaksi Pending */}
+      <ConfirmModal
+        isOpen={Boolean(confirmDeleteTrx)}
+        onClose={() => setConfirmDeleteTrx(null)}
+        onConfirm={handleExecuteDeleteTrx}
+        title="Batalkan Pengajuan Barang Keluar"
+        message={`Apakah Anda yakin ingin membatalkan pengajuan transaksi ${confirmDeleteTrx?.nomor_transaksi}? Data transaksi yang dibatalkan akan dihapus dari antrean pending.`}
+        confirmText="Ya, Batalkan"
+        variant="danger"
+        isLoading={isProcessing}
+      />
+
       {/* Modal Konfirmasi Transaksi */}
       <ConfirmModal
         isOpen={Boolean(confirmDialog)}

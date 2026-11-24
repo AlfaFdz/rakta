@@ -29,25 +29,24 @@ export function formatTanggal(tanggal, denganWaktu = false) {
   return new Intl.DateTimeFormat("id-ID", opsi).format(dateObj);
 }
 
-// Menghitung status stok barang berdasarkan level stok gudang.
-// Mengembalikan objek: { kode, label }
-// - habis: jika stok <= 0
-// - kritis: jika stok <= stokMinimum
-// - menipis: jika stok <= stokLow
-// - normal: jika di atas stokLow
+// Menghitung status stok barang berdasarkan 4 level stok gudang:
+// - Out of Stock (Abu-abu): Stok = 0
+// - Severe (Merah): 0 < Stok <= Stok Minimum
+// - Low (Kuning): Stok Minimum < Stok <= Stok Low (validasi form: Stok Low > Stok Minimum)
+// - Normal (Hijau): Stok > Stok Low
 export function hitungStatusStok(jumlahStok, stokMinimum = 10, stokLow = 20) {
   const stok = Number(jumlahStok) || 0;
   const min = Number(stokMinimum) || 0;
   const low = Number(stokLow) || 0;
 
   if (stok <= 0) {
-    return { kode: "habis", label: "Stok Habis" };
+    return { kode: "habis", label: "Out of Stock" };
   }
   if (stok <= min) {
-    return { kode: "kritis", label: "Kritis" };
+    return { kode: "kritis", label: "Severe" };
   }
   if (stok <= low) {
-    return { kode: "menipis", label: "Menipis" };
+    return { kode: "menipis", label: "Low" };
   }
   return { kode: "normal", label: "Normal" };
 }

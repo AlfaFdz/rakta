@@ -1,9 +1,10 @@
 import { getSession } from "@/lib/auth";
+import { query } from "@/lib/db";
 import { logoutAction } from "@/app/actions/auth";
 import { redirect } from "next/navigation";
 import { Card, CardTitle, CardDescription } from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
-import { Clock, ShieldAlert, LogOut, Building2, Mail, UserCheck } from "lucide-react";
+import { Clock, ShieldAlert, LogOut, Building2, Mail, UserCheck, AlertTriangle } from "lucide-react";
 
 export default async function PendingPage() {
   const session = await getSession();
@@ -16,6 +17,17 @@ export default async function PendingPage() {
   // Jika akun sudah approved, arahkan ke dashboard
   if (session.status === "approved") {
     redirect("/dashboard");
+  }
+
+  // Ambil alasan penolakan terkini dari database jika akun ditolak
+  let rejectionReason = null;
+  if (session.status === "rejected") {
+    try {
+      const res = await query("SELECT rejection_reason FROM users WHERE id = $1", [session.id]);
+      rejectionReason = res.rows[0]?.rejection_reason || null;
+    } catch (err) {
+      console.error("Gagal mengambil rejection_reason:", err);
+    }
   }
 
   const isRejected = session.status === "rejected";
@@ -100,6 +112,15 @@ export default async function PendingPage() {
                 {session.status}
               </span>
             </div>
+
+            {isRejected && rejectionReason && (
+              <div className="pt-2 mt-2 border-t border-rakta-subtle/50 text-xs">
+                <span className="font-semibold text-rose-700 block mb-0.5">Alasan Penolakan:</span>
+                <p className="text-rakta-navy bg-rose-50/60 p-2.5 rounded-lg border border-rose-200/80 italic">
+                  &ldquo;{rejectionReason}&rdquo;
+                </p>
+              </div>
+            )}
           </div>
 
           <form action={logoutAction}>

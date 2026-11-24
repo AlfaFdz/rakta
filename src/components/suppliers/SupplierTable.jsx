@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { updateSupplierStatusAction } from "@/app/actions/suppliers";
 import Button from "@/components/ui/Button";
 import { formatTanggal } from "@/lib/format";
-import { CheckCircle2, XCircle, Clock, Search, Building2, Mail, Phone, AlertCircle } from "lucide-react";
+import { CheckCircle2, XCircle, Clock, Search, Building2, Mail, Phone, AlertCircle, X, Loader2 } from "lucide-react";
 
 export default function SupplierTable({ suppliers = [], counts = {} }) {
   const [activeFilter, setActiveFilter] = useState("all");
@@ -12,6 +12,8 @@ export default function SupplierTable({ suppliers = [], counts = {} }) {
   const [feedback, setFeedback] = useState(null);
   const [isPending, startTransition] = useTransition();
   const [loadingId, setLoadingId] = useState(null);
+  const [rejectModalSupplier, setRejectModalSupplier] = useState(null);
+  const [rejectionReasonInput, setRejectionReasonInput] = useState("");
 
   // Filter supplier berdasarkan status tab dan teks pencarian
   const filteredSuppliers = suppliers.filter((s) => {
@@ -27,6 +29,13 @@ export default function SupplierTable({ suppliers = [], counts = {} }) {
   });
 
   const handleStatusChange = (supplierId, newStatus) => {
+    if (newStatus === "rejected") {
+      const sup = suppliers.find((s) => s.id === supplierId);
+      setRejectModalSupplier(sup || { id: supplierId, nama: "Supplier" });
+      setRejectionReasonInput("");
+      return;
+    }
+
     setLoadingId(supplierId);
     setFeedback(null);
 
@@ -36,6 +45,30 @@ export default function SupplierTable({ suppliers = [], counts = {} }) {
         setFeedback({ type: "success", message: res.message });
       } else {
         setFeedback({ type: "error", message: res?.error || "Gagal memperbarui status." });
+      }
+      setLoadingId(null);
+    });
+  };
+
+  const handleExecuteRejectSupplier = () => {
+    if (!rejectModalSupplier) return;
+    if (!rejectionReasonInput.trim()) {
+      setFeedback({ type: "error", message: "Alasan penolakan akun supplier wajib diisi." });
+      return;
+    }
+
+    const supplierId = rejectModalSupplier.id;
+    setLoadingId(supplierId);
+    setFeedback(null);
+
+    startTransition(async () => {
+      const res = await updateSupplierStatusAction(supplierId, "rejected", rejectionReasonInput.trim());
+      if (res?.success) {
+        setFeedback({ type: "success", message: res.message });
+        setRejectModalSupplier(null);
+        setRejectionReasonInput("");
+      } else {
+        setFeedback({ type: "error", message: res?.error || "Gagal menolak akun supplier." });
       }
       setLoadingId(null);
     });
@@ -263,6 +296,76 @@ export default function SupplierTable({ suppliers = [], counts = {} }) {
           </div>
         )}
       </div>
+
+      {/* Modal Input Alasan Penolakan Supplier (Wajib) */}
+      {rejectModalSupplier && (
+        <div className="fixed inset-0 z-50 bg-rakta-navy/40 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-rakta-card border border-rakta-subtle/80 rounded-2xl w-full max-w-md p-6 rakta-card-shadow relative my-8 animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between pb-3 border-b border-rakta-subtle/60">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-full bg-rose-50 text-rose-700 flex items-center justify-center">
+                  <XCircle className="w-4 h-4" />
+                </div>
+                <h3 className="text-base font-bold text-rakta-navy">
+                  Tolak Akun Rekanan Supplier
+                </h3>
+              </div>
+              <button
+                onClick={() => {
+                  setRejectModalSupplier(null);
+                  setRejectionReasonInput("");
+                }}
+                className="text-rakta-muted hover:text-rakta-navy p-1 rounded-full hover:bg-rakta-surface transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <p className="text-xs text-rakta-muted mt-3">
+              Anda akan menolak pengajuan kemitraan untuk supplier <span className="font-bold text-rakta-navy">{rejectModalSupplier.nama_perusahaan || rejectModalSupplier.nama}</span>. Masukkan alasan penolakan wajib agar dapat ditinjau oleh pihak supplier.
+            </p>
+
+            <div className="mt-4 space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-rakta-navy mb-1">
+                  Alasan Penolakan <span className="text-rose-500">*</span>
+                </label>
+                <textarea
+                  value={rejectionReasonInput}
+                  onChange={(e) => setRejectionReasonInput(e.target.value)}
+                  rows={3}
+                  required
+                  placeholder="Contoh: Dokumen perizinan usaha kadaluarsa / Profil pemasok belum memenuhi standar logistik RAKTA..."
+                  className="w-full px-3 py-2 text-sm rounded-xl bg-rakta-card border border-rakta-subtle text-rakta-navy placeholder:text-rakta-muted/60 focus:outline-none focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20 resize-none"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-rakta-subtle/60">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setRejectModalSupplier(null);
+                    setRejectionReasonInput("");
+                  }}
+                  className="rounded-full text-xs font-semibold px-4 py-2"
+                >
+                  Batal
+                </Button>
+                <Button
+                  type="button"
+                  disabled={Boolean(loadingId) || !rejectionReasonInput.trim()}
+                  onClick={handleExecuteRejectSupplier}
+                  className="rounded-full bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold px-5 py-2 flex items-center gap-1.5 shadow-xs"
+                >
+                  {Boolean(loadingId) && <Loader2 className="w-4 h-4 animate-spin" />}
+                  <span>{loadingId ? "Memproses..." : "Konfirmasi Penolakan"}</span>
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

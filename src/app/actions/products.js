@@ -117,33 +117,23 @@ export async function updateProductAction(prevState, formData) {
   }
 
   try {
-    // Validasi keunikan SKU pada produk lain
-    const existing = await query(
-      "SELECT id FROM products WHERE UPPER(sku) = $1 AND id != $2",
-      [sku, id]
-    );
-    if (existing.rows.length > 0) {
-      return { error: `SKU "${sku}" sudah digunakan oleh produk lain. Silakan pilih kode SKU yang unik.` };
-    }
-
+    // SKU bersifat terkunci (read-only) saat edit produk
     const result = await query(
       `UPDATE products SET
-        sku = $1,
-        nama = $2,
-        category_id = $3,
-        supplier_id = $4,
-        deskripsi = $5,
-        harga_beli = $6,
-        harga_jual = $7,
-        stok_minimum = $8,
-        stok_low = $9,
-        unit = $10,
-        lokasi_rak = $11,
+        nama = $1,
+        category_id = $2,
+        supplier_id = $3,
+        deskripsi = $4,
+        harga_beli = $5,
+        harga_jual = $6,
+        stok_minimum = $7,
+        stok_low = $8,
+        unit = $9,
+        lokasi_rak = $10,
         updated_at = NOW()
-      WHERE id = $12
-      RETURNING id, nama`,
+      WHERE id = $11
+      RETURNING id, nama, sku`,
       [
-        sku,
         nama,
         categoryId,
         supplierId,

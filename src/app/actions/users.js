@@ -6,7 +6,7 @@ import { revalidatePath } from "next/cache";
 
 // Server action untuk mengubah status aktif/nonaktif atau persetujuan akun pengguna
 // Khusus role: admin
-export async function updateUserStatusAction(userId, newStatus) {
+export async function updateUserStatusAction(userId, newStatus, rejectionReason = null) {
   const session = await getSession();
 
   if (!session || session.role !== "admin") {
@@ -32,10 +32,22 @@ export async function updateUserStatusAction(userId, newStatus) {
     return { success: false, error: "Status baru yang diajukan tidak valid." };
   }
 
+  const reason = rejectionReason ? rejectionReason.toString().trim() : null;
+  if (newStatus === "rejected" && !reason) {
+    return {
+      success: false,
+      error: "Alasan penolakan / penonaktifan akun wajib diisi.",
+    };
+  }
+
   try {
     const res = await query(
-      "UPDATE users SET status = $1 WHERE id = $2 RETURNING id, nama, role, status, nama_perusahaan",
-      [newStatus, id]
+      `UPDATE users 
+       SET status = $1, 
+           rejection_reason = $2 
+       WHERE id = $3 
+       RETURNING id, nama, role, status, nama_perusahaan`,
+      [newStatus, newStatus === "rejected" ? reason : null, id]
     );
 
     if (res.rows.length === 0) {
@@ -43,7 +55,7 @@ export async function updateUserStatusAction(userId, newStatus) {
     }
 
     const targetUser = res.rows[0];
-    const statusLabel = newStatus === "approved" ? "diaktifkan / disetujui" : "dinonaktifkan / ditolak";
+    const statusLabel = newStatus === "approved" ? "diaktifkan / disetujui" : `dinonaktifkan / ditolak (${reason})`;
 
     revalidatePath("/users");
     revalidatePath("/suppliers");

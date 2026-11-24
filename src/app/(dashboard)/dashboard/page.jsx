@@ -14,12 +14,13 @@ export default async function DashboardPage() {
   // 1. DATA FETCHING UNTUK ROLE ADMIN
   // ---------------------------------------------------------------------------
   if (role === "admin") {
-    const [produkRes, lowStockRes, pendingSupplierRes, totalTrxRes, latestTrxRes] =
+    const [produkRes, lowStockRes, pendingSupplierRes, totalTrxRes, assetRes, latestTrxRes] =
       await Promise.all([
         query("SELECT COUNT(*)::int AS total FROM products"),
         query("SELECT COUNT(*)::int AS total FROM products WHERE jumlah_stok <= stok_low"),
         query("SELECT COUNT(*)::int AS total FROM users WHERE role = 'supplier' AND status = 'pending'"),
         query("SELECT COUNT(*)::int AS total FROM transactions"),
+        query("SELECT COALESCE(SUM(jumlah_stok * harga_beli), 0)::numeric AS total FROM products"),
         query(`
           SELECT t.id, t.nomor_transaksi, COALESCE(t.tipe, t.type) AS tipe, COALESCE(t.tanggal_transaksi, t.created_at) AS tanggal_transaksi, t.status, t.tujuan_customer,
                  u.nama AS pembuat_nama, s.nama_perusahaan AS supplier_perusahaan,
@@ -36,6 +37,7 @@ export default async function DashboardPage() {
     const totalStokLow = lowStockRes.rows[0]?.total || 0;
     const totalSupplierPending = pendingSupplierRes.rows[0]?.total || 0;
     const totalTransaksi = totalTrxRes.rows[0]?.total || 0;
+    const totalNilaiInventori = assetRes.rows[0]?.total || 0;
     const latestTrx = latestTrxRes.rows || [];
 
     return (
@@ -47,7 +49,7 @@ export default async function DashboardPage() {
               Ringkasan Operasional Administrator
             </h1>
             <p className="text-xs text-rakta-muted mt-1">
-              Pantau seluruh aktivitas inventaris gudang, verifikasi rekanan, dan log transaksi sistem.
+              Pantau seluruh aktivitas inventaris gudang, nilai inventori, verifikasi rekanan, dan log transaksi sistem.
             </p>
           </div>
           <span className="text-xs font-mono text-rakta-muted bg-rakta-surface border border-rakta-subtle/60 px-3 py-1.5 rounded-full self-start sm:self-auto">
@@ -55,8 +57,8 @@ export default async function DashboardPage() {
           </span>
         </div>
 
-        {/* 4 Kartu Metrik Admin */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* 5 Kartu Metrik Admin */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
           <Card>
             <div className="flex items-center justify-between">
               <span className="text-xs font-medium text-rakta-muted">Total Produk Aktif</span>
@@ -68,6 +70,19 @@ export default async function DashboardPage() {
               {totalProduk} <span className="text-xs font-normal text-rakta-muted">SKU</span>
             </div>
             <p className="text-[11px] text-rakta-muted mt-1">Katalog produk master gudang</p>
+          </Card>
+
+          <Card>
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-medium text-rakta-muted">Total Nilai Inventori</span>
+              <div className="w-8 h-8 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600">
+                <DollarSign className="w-4 h-4" />
+              </div>
+            </div>
+            <div className="text-lg font-bold text-rakta-navy font-mono mt-2 truncate">
+              {formatRupiah(totalNilaiInventori)}
+            </div>
+            <p className="text-[11px] text-rakta-muted mt-1">Valuasi stok aset gudang</p>
           </Card>
 
           <Card>

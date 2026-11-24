@@ -42,17 +42,17 @@ export async function createIncomingFromRestockAction(orderId, catatanInput) {
 
     const order = orderRes.rows[0];
 
-    if (order.status !== "received") {
+    if (order.status !== "inspecting" && order.status !== "received") {
       return {
         success: false,
-        error: `Pesanan ${order.nomor_po} belum ditandai tiba di gudang (status saat ini: ${order.status}). Tunggu Warehouse Manager menandai barang tiba terlebih dahulu.`,
+        error: `Pesanan ${order.nomor_po} belum dalam tahap pemeriksaan fisik (status saat ini: ${order.status}). Tunggu Warehouse Manager menandai kedatangan barang terlebih dahulu.`,
       };
     }
 
-    // Cek apakah sudah pernah dibuatkan transaksi masuk untuk PO ini yang berstatus pending/approved/completed
+    // 1 Nomor PO hanya bisa dipakai oleh 1 Incoming Transaction yang tidak berstatus Rejected
     const existingTrx = await query(
       `SELECT id, nomor_transaksi, status FROM transactions 
-       WHERE restock_order_id = $1 AND status IN ('pending', 'approved', 'completed')`,
+       WHERE restock_order_id = $1 AND status != 'rejected'`,
       [id]
     );
 
@@ -135,7 +135,7 @@ export async function approveIncomingTransactionAction(transactionId) {
 
     // 1. Kunci baris transaksi dan verifikasi status
     const trxCheck = await client.query(
-      `SELECT t.id, t.nomor_transaksi, t.product_id, t.quantity, t.status, t.type, t.tipe,
+      `SELECT t.id, t.nomor_transaksi, t.product_id, t.quantity, t.status, t.type, t.tipe, t.restock_order_id,
               p.nama AS product_nama, p.unit
        FROM transactions t
        JOIN products p ON t.product_id = p.id
@@ -191,6 +191,17 @@ export async function approveIncomingTransactionAction(transactionId) {
       [session.id, id]
     );
 
+    // 5. Secara atomik perbarui status PO terkait menjadi 'received'
+    if (trx.restock_order_id) {
+      await client.query(
+        `UPDATE restock_orders
+         SET status = 'received',
+             catatan_status = 'Pemeriksaan fisik sesuai. Disetujui oleh ' || $1 || ' dan stok produk bertambah.'
+         WHERE id = $2`,
+        [session.nama || "Warehouse Manager", trx.restock_order_id]
+      );
+    }
+
     await client.query("COMMIT");
 
     revalidatePath("/transactions");
@@ -200,7 +211,7 @@ export async function approveIncomingTransactionAction(transactionId) {
 
     return {
       success: true,
-      message: `Transaksi masuk ${trx.nomor_transaksi} disetujui. Stok "${trx.product_nama}" otomatis bertambah +${trx.quantity} ${trx.unit}.`,
+      message: `Transaksi masuk ${trx.nomor_transaksi} disetujui. Status PO otomatis beralih ke Received dan stok "${trx.product_nama}" bertambah +${trx.quantity} ${trx.unit}.`,
     };
   } catch (err) {
     await client.query("ROLLBACK");
@@ -230,8 +241,11 @@ export async function rejectIncomingTransactionAction(transactionId, reason) {
     return { success: false, error: "Alasan penolakan transaksi barang masuk wajib diisi." };
   }
 
+  const client = await pool.connect();
   try {
-    const res = await query(
+    await client.query("BEGIN");
+
+    const res = await client.query(
       `UPDATE transactions
        SET status = 'rejected',
            rejection_reason = $1,
@@ -240,24 +254,44 @@ export async function rejectIncomingTransactionAction(transactionId, reason) {
            disetujui_oleh = $2,
            updated_at = NOW()
        WHERE id = $3 AND status = 'pending' AND (type = 'incoming' OR tipe = 'masuk')
-       RETURNING nomor_transaksi`,
+       RETURNING nomor_transaksi, restock_order_id`,
       [alasan, session.id, id]
     );
 
     if (res.rows.length === 0) {
+      await client.query("ROLLBACK");
       return { success: false, error: "Transaksi tidak ditemukan atau statusnya sudah berubah." };
     }
 
+    const restockOrderId = res.rows[0].restock_order_id;
+    if (restockOrderId) {
+      await client.query(
+        `UPDATE restock_orders
+         SET status = 'returned',
+             rejection_reason = $1,
+             catatan_status = 'Barang ditolak / dikembalikan (Returned): ' || $1,
+             refund_status = 'Klaim Refund Diajukan'
+         WHERE id = $2`,
+        [alasan, restockOrderId]
+      );
+    }
+
+    await client.query("COMMIT");
+
     revalidatePath("/transactions");
+    revalidatePath("/restock");
     revalidatePath("/dashboard");
 
     return {
       success: true,
-      message: `Transaksi masuk ${res.rows[0].nomor_transaksi} berhasil ditolak dengan alasan: "${alasan}".`,
+      message: `Transaksi masuk ${res.rows[0].nomor_transaksi} berhasil ditolak. Status PO terkait otomatis diubah ke Returned (Klaim Refund Diajukan) dengan alasan: "${alasan}".`,
     };
   } catch (err) {
+    await client.query("ROLLBACK");
     console.error("Kesalahan rejectIncomingTransactionAction:", err);
     return { success: false, error: "Gagal menolak transaksi barang masuk." };
+  } finally {
+    client.release();
   }
 }
 
@@ -528,9 +562,9 @@ export async function dispatchOutgoingTransactionAction(transactionId) {
       [trx.quantity, trx.product_id]
     );
 
-    // 4. Ubah status transaksi menjadi 'completed'
+    // 4. Ubah status transaksi menjadi 'shipped' (Selesai Dikirim)
     await client.query(
-      "UPDATE transactions SET status = 'completed', updated_at = NOW() WHERE id = $1",
+      "UPDATE transactions SET status = 'shipped', updated_at = NOW() WHERE id = $1",
       [id]
     );
 
@@ -542,7 +576,7 @@ export async function dispatchOutgoingTransactionAction(transactionId) {
 
     return {
       success: true,
-      message: `Barang untuk transaksi ${trx.nomor_transaksi} berhasil dikirim (status: Completed). Stok "${trx.product_nama}" otomatis berkurang -${trx.quantity} ${trx.unit}.`,
+      message: `Barang untuk transaksi ${trx.nomor_transaksi} berhasil dikirim (status: Shipped). Stok "${trx.product_nama}" otomatis berkurang -${trx.quantity} ${trx.unit}.`,
     };
   } catch (err) {
     await client.query("ROLLBACK");
@@ -550,5 +584,163 @@ export async function dispatchOutgoingTransactionAction(transactionId) {
     return { success: false, error: "Gagal memproses pengiriman barang keluar." };
   } finally {
     client.release();
+  }
+}
+
+// 5. Staff Gudang mengedit Outgoing Transaction yang masih berstatus 'pending' miliknya
+// Hak akses: staff_gudang & admin (transaksi yang diajukan sendiri, atau admin)
+export async function updatePendingOutgoingTransactionAction(prevState, formData) {
+  const session = await getSession();
+
+  if (!session || (session.role !== "staff_gudang" && session.role !== "admin")) {
+    return { error: "Akses ditolak. Anda tidak memiliki izin mengubah transaksi barang keluar." };
+  }
+
+  const transactionId = parseInt(formData.get("transaction_id"), 10);
+  const productId = parseInt(formData.get("product_id"), 10);
+  const qty = parseInt(formData.get("qty"), 10);
+  const tujuanCustomer = formData.get("tujuan_customer")?.toString().trim();
+  const catatan = formData.get("catatan")?.toString().trim() || null;
+
+  if (isNaN(transactionId) || isNaN(productId) || isNaN(qty) || qty <= 0 || !tujuanCustomer) {
+    return { error: "Semua kolom wajib diisi dengan format yang benar." };
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+
+    // Kunci transaksi dan cek status pending serta kepemilikan
+    const trxRes = await client.query(
+      `SELECT id, nomor_transaksi, dibuat_oleh, created_by, status, type, tipe
+       FROM transactions
+       WHERE id = $1 FOR UPDATE`,
+      [transactionId]
+    );
+
+    if (trxRes.rows.length === 0) {
+      await client.query("ROLLBACK");
+      return { error: "Transaksi tidak ditemukan." };
+    }
+
+    const trx = trxRes.rows[0];
+
+    if (trx.status !== "pending") {
+      await client.query("ROLLBACK");
+      return { error: `Transaksi tidak dapat diedit karena statusnya sudah ${trx.status}.` };
+    }
+
+    const creatorId = trx.dibuat_oleh || trx.created_by;
+    if (session.role !== "admin" && creatorId !== session.id) {
+      await client.query("ROLLBACK");
+      return { error: "Anda hanya dapat mengedit transaksi yang Anda ajukan sendiri." };
+    }
+
+    // Cek stok fisik produk
+    const prodRes = await client.query(
+      "SELECT id, nama, jumlah_stok, unit FROM products WHERE id = $1",
+      [productId]
+    );
+
+    if (prodRes.rows.length === 0) {
+      await client.query("ROLLBACK");
+      return { error: "Produk yang dipilih tidak ditemukan dalam katalog." };
+    }
+
+    const product = prodRes.rows[0];
+    if (qty > parseInt(product.jumlah_stok, 10)) {
+      await client.query("ROLLBACK");
+      return {
+        error: `Stok fisik di gudang tidak mencukupi (${product.jumlah_stok} ${product.unit} tersedia, diajukan ${qty} ${product.unit}).`,
+      };
+    }
+
+    const catatanLengkap = `Pengeluaran Barang ke ${tujuanCustomer}${catatan ? ` | Catatan: ${catatan}` : ""}`;
+
+    await client.query(
+      `UPDATE transactions
+       SET product_id = $1,
+           quantity = $2,
+           tujuan_customer = $3,
+           catatan = $4,
+           notes = $4,
+           updated_at = NOW()
+       WHERE id = $5`,
+      [productId, qty, tujuanCustomer, catatanLengkap, transactionId]
+    );
+
+    await client.query(
+      `UPDATE transaction_items
+       SET product_id = $1,
+           qty = $2
+       WHERE transaction_id = $3`,
+      [productId, qty, transactionId]
+    );
+
+    await client.query("COMMIT");
+
+    revalidatePath("/transactions");
+    revalidatePath("/dashboard");
+
+    return {
+      success: true,
+      message: `Transaksi keluar ${trx.nomor_transaksi} berhasil diperbarui.`,
+    };
+  } catch (err) {
+    await client.query("ROLLBACK");
+    console.error("Kesalahan updatePendingOutgoingTransactionAction:", err);
+    return { error: "Gagal memperbarui transaksi barang keluar." };
+  } finally {
+    client.release();
+  }
+}
+
+// 6. Staff Gudang menghapus Outgoing Transaction yang masih berstatus 'pending' miliknya
+// Hak akses: staff_gudang & admin (transaksi yang diajukan sendiri, atau admin)
+export async function deletePendingOutgoingTransactionAction(transactionId) {
+  const session = await getSession();
+
+  if (!session || (session.role !== "staff_gudang" && session.role !== "admin")) {
+    return { success: false, error: "Akses ditolak. Anda tidak memiliki izin menghapus transaksi." };
+  }
+
+  const id = parseInt(transactionId, 10);
+  if (isNaN(id)) {
+    return { success: false, error: "ID transaksi tidak valid." };
+  }
+
+  try {
+    const trxRes = await query(
+      "SELECT id, nomor_transaksi, dibuat_oleh, created_by, status, type, tipe FROM transactions WHERE id = $1",
+      [id]
+    );
+
+    if (trxRes.rows.length === 0) {
+      return { success: false, error: "Transaksi tidak ditemukan." };
+    }
+
+    const trx = trxRes.rows[0];
+
+    if (trx.status !== "pending") {
+      return { success: false, error: `Transaksi tidak dapat dihapus karena status saat ini adalah ${trx.status}.` };
+    }
+
+    const creatorId = trx.dibuat_oleh || trx.created_by;
+    if (session.role !== "admin" && creatorId !== session.id) {
+      return { success: false, error: "Anda hanya dapat membatalkan transaksi yang Anda ajukan sendiri." };
+    }
+
+    await query("DELETE FROM transactions WHERE id = $1", [id]);
+
+    revalidatePath("/transactions");
+    revalidatePath("/dashboard");
+
+    return {
+      success: true,
+      message: `Pengajuan transaksi keluar ${trx.nomor_transaksi} berhasil dibatalkan dan dihapus.`,
+    };
+  } catch (err) {
+    console.error("Kesalahan deletePendingOutgoingTransactionAction:", err);
+    return { success: false, error: "Gagal menghapus transaksi." };
   }
 }

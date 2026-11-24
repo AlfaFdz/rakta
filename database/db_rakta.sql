@@ -27,6 +27,7 @@ CREATE TABLE users (
     password_hash VARCHAR(255) NOT NULL,
     role VARCHAR(30) NOT NULL CHECK (role IN ('admin', 'warehouse_manager', 'staff_gudang', 'supplier')),
     status VARCHAR(20) NOT NULL DEFAULT 'approved' CHECK (status IN ('pending', 'approved', 'rejected')),
+    rejection_reason TEXT,
     nama_perusahaan VARCHAR(200),
     kontak VARCHAR(50),
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -79,12 +80,16 @@ CREATE TABLE restock_orders (
     supplier_id INT NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
     tanggal_order TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     estimasi_tiba DATE,
-    status VARCHAR(20) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'confirmed', 'rejected', 'in_transit', 'received')),
+    status VARCHAR(20) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'confirmed', 'rejected', 'in_transit', 'inspecting', 'received', 'returned')),
     nomor_resi VARCHAR(100),
     tracking_number VARCHAR(100),
     rejection_reason TEXT,
     catatan TEXT,
     catatan_status TEXT,
+    foto_bukti_url TEXT,
+    laporan_pemeriksaan TEXT,
+    refund_status VARCHAR(50),
+    refund_note TEXT,
     rating INT CHECK (rating BETWEEN 1 AND 5),
     review_note TEXT,
     rating_supplier INT CHECK (rating_supplier BETWEEN 1 AND 5),
@@ -161,14 +166,15 @@ CREATE INDEX idx_restock_orders_status ON restock_orders(status);
 -- =============================================================================
 -- DATA AWAL (SEEDING)
 -- Password seluruh akun bawaan: password123
--- Hash bcrypt valid (cost factor 10): $2b$10$n/XTBsuDebG4iJd2yVW0ne5cz.SpQ9l4wGKTdTVZHxevwe7XfPU9i
+-- Hash bcrypt valid (cost factor 10): $2b$10$Cgie7LBv/vFvAyBOvmpEGOyCLjmN1qfKf7.ECHgroNxAAIQKyjmMS
 -- =============================================================================
 
 INSERT INTO users (nama, email, password_hash, role, status, nama_perusahaan, kontak) VALUES
-('Alfaridzi', 'admin@rakta.id', '$2b$10$n/XTBsuDebG4iJd2yVW0ne5cz.SpQ9l4wGKTdTVZHxevwe7XfPU9i', 'admin', 'approved', 'PT Rakta Logistik Utama', '081234567890'),
-('Regi Maulana', 'manager@rakta.id', '$2b$10$n/XTBsuDebG4iJd2yVW0ne5cz.SpQ9l4wGKTdTVZHxevwe7XfPU9i', 'warehouse_manager', 'approved', 'PT Rakta Logistik Utama', '081234567891'),
-('Ilham Kurniawan', 'staff@rakta.id', '$2b$10$n/XTBsuDebG4iJd2yVW0ne5cz.SpQ9l4wGKTdTVZHxevwe7XfPU9i', 'staff_gudang', 'approved', 'PT Rakta Logistik Utama', '081234567892'),
-('Budi Santoso', 'supplier@rakta.id', '$2b$10$n/XTBsuDebG4iJd2yVW0ne5cz.SpQ9l4wGKTdTVZHxevwe7XfPU9i', 'supplier', 'approved', 'PT Sumber Logistik Abadi', '081234567893');
+('Alfaridzi', 'admin@rakta.id', '$2b$10$Cgie7LBv/vFvAyBOvmpEGOyCLjmN1qfKf7.ECHgroNxAAIQKyjmMS', 'admin', 'approved', 'PT Rakta Logistik Utama', '081234567890'),
+('Regi Maulana', 'manager@rakta.id', '$2b$10$Cgie7LBv/vFvAyBOvmpEGOyCLjmN1qfKf7.ECHgroNxAAIQKyjmMS', 'warehouse_manager', 'approved', 'PT Rakta Logistik Utama', '081234567891'),
+('Ilham Kurniawan', 'staff@rakta.id', '$2b$10$Cgie7LBv/vFvAyBOvmpEGOyCLjmN1qfKf7.ECHgroNxAAIQKyjmMS', 'staff_gudang', 'approved', 'PT Rakta Logistik Utama', '081234567892'),
+('Gilang Ramadhan', 'gilang@rakta.id', '$2b$10$Cgie7LBv/vFvAyBOvmpEGOyCLjmN1qfKf7.ECHgroNxAAIQKyjmMS', 'supplier', 'approved', 'PT Mencari Cinta Sejati', '081234567893'),
+('Ryan Pasha', 'ryan@rakta.id', '$2b$10$Cgie7LBv/vFvAyBOvmpEGOyCLjmN1qfKf7.ECHgroNxAAIQKyjmMS', 'supplier', 'pending', 'PT Brangkas Hitam', '081234567894');
 
 -- Data Kategori Contoh
 INSERT INTO categories (nama, deskripsi, gambar_url) VALUES

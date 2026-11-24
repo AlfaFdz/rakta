@@ -38,12 +38,16 @@ export default async function RestockPage() {
       ro.rejection_reason,
       ro.catatan,
       ro.catatan_status,
+      ro.foto_bukti_url,
+      ro.laporan_pemeriksaan,
+      ro.refund_status,
+      ro.refund_note,
       COALESCE(ro.rating, ro.rating_supplier) AS rating,
       COALESCE(ro.review_note, ro.ulasan_supplier) AS review_note,
       EXISTS (
         SELECT 1 FROM transactions t 
         WHERE t.restock_order_id = ro.id 
-          AND t.status IN ('approved', 'completed')
+          AND t.status IN ('approved', 'completed', 'shipped')
       ) AS incoming_approved,
       u_creator.nama AS dibuat_oleh_nama,
       COALESCE(

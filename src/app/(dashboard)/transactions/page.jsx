@@ -79,8 +79,8 @@ export default async function TransactionsPage() {
   const transactionsParams = isSupplier ? [session.id] : [];
   const transactionsRes = await query(transactionsQuery, transactionsParams);
 
-  // Query pesanan restock yang berstatus 'received' (sudah tiba di gudang)
-  // yang belum pernah dibuatkan dokumen transaksi masuk oleh staff gudang
+  // Query pesanan restock yang berstatus 'inspecting' (atau 'received') yang siap diperiksa fisik
+  // dan dibuatkan dokumen transaksi masuk oleh staff gudang
   let receivedOrders = [];
   if (session.role === "staff_gudang" || session.role === "admin" || session.role === "warehouse_manager") {
     const receivedRes = await query(
@@ -94,6 +94,8 @@ export default async function TransactionsPage() {
         ro.tracking_number,
         ro.catatan_status,
         ro.tanggal_order,
+        ro.foto_bukti_url,
+        ro.status,
         ri.product_id,
         ri.qty,
         p.nama AS product_nama,
@@ -103,11 +105,11 @@ export default async function TransactionsPage() {
       JOIN users u_sup ON ro.supplier_id = u_sup.id
       JOIN restock_items ri ON ro.id = ri.restock_order_id
       JOIN products p ON ri.product_id = p.id
-      WHERE ro.status = 'received'
+      WHERE (ro.status = 'inspecting' OR ro.status = 'received')
         AND NOT EXISTS (
           SELECT 1 FROM transactions t 
           WHERE t.restock_order_id = ro.id 
-            AND t.status IN ('pending', 'approved', 'completed')
+            AND t.status != 'rejected'
         )
       ORDER BY ro.tanggal_order DESC`
     );

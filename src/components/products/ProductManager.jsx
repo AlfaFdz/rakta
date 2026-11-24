@@ -556,14 +556,22 @@ export default function ProductManager({
                 <div>
                   <label className="block text-xs font-semibold text-rakta-navy mb-1">
                     Kode SKU <span className="text-rose-500">*</span>
+                    {modalMode === "edit" && (
+                      <span className="ml-1 text-[10px] text-rakta-muted font-normal">(Terkunci)</span>
+                    )}
                   </label>
                   <input
                     type="text"
                     name="sku"
                     required
+                    readOnly={modalMode === "edit"}
                     placeholder="Contoh: ELK-SCN-001"
                     defaultValue={selectedProduct?.sku || ""}
-                    className="w-full px-3 py-2 text-sm uppercase rounded-xl bg-rakta-card border border-rakta-subtle text-rakta-navy placeholder:text-rakta-muted/60 focus:outline-none focus:border-rakta-primary focus:ring-2 focus:ring-rakta-primary/20"
+                    className={`w-full px-3 py-2 text-sm uppercase rounded-xl border text-rakta-navy placeholder:text-rakta-muted/60 focus:outline-none ${
+                      modalMode === "edit"
+                        ? "bg-rakta-surface text-rakta-muted cursor-not-allowed border-rakta-subtle/80 font-mono"
+                        : "bg-rakta-card border-rakta-subtle focus:border-rakta-primary focus:ring-2 focus:ring-rakta-primary/20"
+                    }`}
                   />
                 </div>
                 <div className="sm:col-span-2">
@@ -976,7 +984,11 @@ export default function ProductManager({
         onClose={() => setConfirmDeleteProd(null)}
         onConfirm={handleExecuteDeleteProduct}
         title="Hapus Master Produk"
-        message={`Apakah Anda yakin ingin menghapus produk "${confirmDeleteProd?.nama}" (${confirmDeleteProd?.sku}) dari sistem?\n\nPerhatian: Produk yang sudah memiliki riwayat transaksi tidak dapat dihapus.`}
+        message={
+          confirmDeleteProd?.jumlah_stok > 0
+            ? `PERINGATAN: Produk "${confirmDeleteProd?.nama}" (${confirmDeleteProd?.sku}) saat ini masih memiliki sisa stok fisik sebanyak ${confirmDeleteProd.jumlah_stok} ${confirmDeleteProd.unit} di rak gudang!\n\nApakah Anda yakin ingin tetap menghapus master produk ini? Produk yang memiliki riwayat transaksi operasional tidak dapat dihapus.`
+            : `Apakah Anda yakin ingin menghapus produk "${confirmDeleteProd?.nama}" (${confirmDeleteProd?.sku}) dari sistem?\n\nPerhatian: Produk yang sudah memiliki riwayat transaksi tidak dapat dihapus.`
+        }
         confirmText="Hapus Produk"
         variant="danger"
         isLoading={isDeleting}

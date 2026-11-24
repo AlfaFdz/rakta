@@ -7,7 +7,9 @@ import {
   confirmRestockOrderAction,
   rejectRestockOrderAction,
   shipRestockOrderAction,
+  markRestockInspectingAction,
   markRestockReceivedAction,
+  claimRefundAction,
   rateSupplierOrderAction,
 } from "@/app/actions/restock";
 import Button from "@/components/ui/Button";
@@ -32,6 +34,7 @@ import {
   ShieldAlert,
   Star,
   Download,
+  Image as ImageIcon,
 } from "lucide-react";
 
 export default function RestockManager({
@@ -93,6 +96,30 @@ export default function RestockManager({
   // Action state untuk Kirim PO (Supplier)
   const [shipState, shipAction, isShipping] = useActionState(async (prev, formData) => {
     const res = await shipRestockOrderAction(prev, formData);
+    if (res?.success) {
+      setModalMode(null);
+      setSelectedOrder(null);
+      setFeedback({ type: "success", message: res.message });
+      return null;
+    }
+    return res;
+  }, null);
+
+  // Action state untuk Tandai Tiba & Mulai Cek Fisik (Warehouse Manager)
+  const [inspectState, inspectAction, isInspecting] = useActionState(async (prev, formData) => {
+    const res = await markRestockInspectingAction(prev, formData);
+    if (res?.success) {
+      setModalMode(null);
+      setSelectedOrder(null);
+      setFeedback({ type: "success", message: res.message });
+      return null;
+    }
+    return res;
+  }, null);
+
+  // Action state untuk Klaim Refund (Warehouse Manager)
+  const [refundState, refundAction, isRefunding] = useActionState(async (prev, formData) => {
+    const res = await claimRefundAction(prev, formData);
     if (res?.success) {
       setModalMode(null);
       setSelectedOrder(null);
@@ -207,11 +234,23 @@ export default function RestockManager({
           classes: "bg-purple-50 text-purple-700 border-purple-200/80",
           icon: Truck,
         };
+      case "inspecting":
+        return {
+          label: "Pemeriksaan Fisik (Inspecting)",
+          classes: "bg-amber-50 text-amber-700 border-amber-200/80",
+          icon: Clock,
+        };
       case "received":
         return {
           label: "Selesai Diterima",
           classes: "bg-emerald-50 text-emerald-700 border-emerald-200/80",
           icon: CheckCircle2,
+        };
+      case "returned":
+        return {
+          label: "Diretur / Klaim Refund",
+          classes: "bg-rose-50 text-rose-700 border-rose-200/80",
+          icon: XCircle,
         };
       case "rejected":
         return {
@@ -324,6 +363,16 @@ export default function RestockManager({
               Dikirim
             </button>
             <button
+              onClick={() => setStatusFilter("inspecting")}
+              className={`px-3 py-1 text-xs font-semibold rounded-full transition-all ${
+                statusFilter === "inspecting"
+                  ? "bg-amber-50 text-amber-700 shadow-xs border border-amber-200/60"
+                  : "text-rakta-muted hover:text-rakta-navy"
+              }`}
+            >
+              Pemeriksaan
+            </button>
+            <button
               onClick={() => setStatusFilter("received")}
               className={`px-3 py-1 text-xs font-semibold rounded-full transition-all ${
                 statusFilter === "received"
@@ -332,6 +381,16 @@ export default function RestockManager({
               }`}
             >
               Selesai
+            </button>
+            <button
+              onClick={() => setStatusFilter("returned")}
+              className={`px-3 py-1 text-xs font-semibold rounded-full transition-all ${
+                statusFilter === "returned"
+                  ? "bg-rose-50 text-rose-700 shadow-xs border border-rose-200/60"
+                  : "text-rakta-muted hover:text-rakta-navy"
+              }`}
+            >
+              Diretur
             </button>
             <button
               onClick={() => setStatusFilter("rejected")}
@@ -471,6 +530,24 @@ export default function RestockManager({
                               Resi: <span className="font-semibold">{order.nomor_resi}</span>
                             </div>
                           )}
+                          {order.foto_bukti_url && (
+                            <div>
+                              <a
+                                href={order.foto_bukti_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1 text-[11px] font-semibold text-rakta-primary hover:underline"
+                              >
+                                <ImageIcon className="w-3 h-3" />
+                                <span>Foto Kedatangan</span>
+                              </a>
+                            </div>
+                          )}
+                          {order.refund_status && (
+                            <div className="inline-flex items-center gap-1 text-[10px] font-bold text-rose-700 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded">
+                              <span>{order.refund_status}</span>
+                            </div>
+                          )}
                           {order.catatan_status && (
                             <p className="text-[11px] text-rakta-muted max-w-xs line-clamp-2">
                               {order.catatan_status}
@@ -526,7 +603,9 @@ export default function RestockManager({
                             )}
 
                             {(order.status === "in_transit" ||
+                              order.status === "inspecting" ||
                               order.status === "received" ||
+                              order.status === "returned" ||
                               order.status === "rejected") && (
                               <div className="flex items-center gap-1.5">
                                 {order.rating && (
@@ -539,7 +618,7 @@ export default function RestockManager({
                                   </span>
                                 )}
                                 <span className="text-xs text-rakta-muted font-medium bg-rakta-surface px-2.5 py-1 rounded-full border border-rakta-subtle/60">
-                                  Selesai
+                                  {order.status === "returned" ? "Diretur" : "Selesai"}
                                 </span>
                               </div>
                             )}
@@ -561,17 +640,22 @@ export default function RestockManager({
 
                             {order.status === "in_transit" && (
                               <button
-                                onClick={() => handleMarkReceived(order)}
+                                onClick={() => {
+                                  setSelectedOrder(order);
+                                  setModalMode("inspect");
+                                }}
                                 disabled={isProcessing}
-                                className="px-3.5 py-1.5 text-xs font-semibold rounded-full bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 flex items-center gap-1.5 transition-colors disabled:opacity-50 cursor-pointer shadow-2xs"
+                                className="px-3.5 py-1.5 text-xs font-semibold rounded-full bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200 flex items-center gap-1.5 transition-colors disabled:opacity-50 cursor-pointer shadow-2xs"
                               >
-                                {isProcessing ? (
-                                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                                ) : (
-                                  <CheckCircle2 className="w-3.5 h-3.5" />
-                                )}
-                                <span>Tandai Barang Tiba</span>
+                                <CheckCircle2 className="w-3.5 h-3.5" />
+                                <span>Tandai Tiba &amp; Cek Fisik</span>
                               </button>
+                            )}
+
+                            {order.status === "inspecting" && (
+                              <span className="text-xs text-amber-700 font-semibold bg-amber-50 px-2.5 py-1 rounded-full border border-amber-200">
+                                Pemeriksaan Fisik Staff
+                              </span>
                             )}
 
                             {order.status === "received" && (
@@ -604,6 +688,28 @@ export default function RestockManager({
                               </div>
                             )}
 
+                            {order.status === "returned" && (
+                              <div className="flex items-center gap-1.5">
+                                {!order.refund_status ? (
+                                  <button
+                                    onClick={() => {
+                                      setSelectedOrder(order);
+                                      setModalMode("refund");
+                                    }}
+                                    className="px-3 py-1 text-xs font-semibold rounded-full bg-rose-600 hover:bg-rose-700 text-white flex items-center gap-1 shadow-2xs transition-colors cursor-pointer"
+                                    title="Ajukan Klaim Refund ke Supplier"
+                                  >
+                                    <ShieldAlert className="w-3.5 h-3.5" />
+                                    <span>Klaim Refund</span>
+                                  </button>
+                                ) : (
+                                  <span className="text-xs text-rose-700 font-semibold bg-rose-50 px-2.5 py-1 rounded-full border border-rose-200">
+                                    Refund Diajukan
+                                  </span>
+                                )}
+                              </div>
+                            )}
+
                             {(order.status === "confirmed" || order.status === "rejected") && (
                               <span className="text-xs text-rakta-muted font-medium bg-rakta-surface px-2.5 py-1 rounded-full border border-rakta-subtle/60">
                                 {order.status === "confirmed" ? "Sedang Disiapkan Supplier" : "Dibatalkan"}
@@ -615,9 +721,17 @@ export default function RestockManager({
                         {/* Aksi Khusus Staff Gudang */}
                         {userRole === "staff_gudang" && (
                           <div className="text-right">
-                            {order.status === "received" ? (
+                            {order.status === "inspecting" ? (
+                              <span className="text-xs font-semibold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-200">
+                                Perlu Cek Fisik (Transaksi)
+                              </span>
+                            ) : order.status === "received" ? (
                               <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
-                                Siap di Menu Transaksi
+                                Selesai Diterima
+                              </span>
+                            ) : order.status === "returned" ? (
+                              <span className="text-xs font-semibold text-rose-700 bg-rose-50 px-2.5 py-1 rounded-full border border-rose-200">
+                                Diretur
                               </span>
                             ) : order.status === "in_transit" ? (
                               <span className="text-xs font-semibold text-purple-700 bg-purple-50 px-2.5 py-1 rounded-full border border-purple-200">
@@ -883,7 +997,7 @@ export default function RestockManager({
               Pesanan <span className="font-bold text-rakta-navy">{selectedOrder.nomor_po}</span> akan ditandai dalam perjalanan (In Transit). Masukkan nomor resi atau ekspedisi pengiriman.
             </p>
 
-            <form action={shipAction} className="mt-4 space-y-4">
+            <form action={shipAction} encType="multipart/form-data" className="mt-4 space-y-4">
               <input type="hidden" name="order_id" value={selectedOrder.id} />
 
               <div>
@@ -908,6 +1022,30 @@ export default function RestockManager({
                   placeholder="Contoh: Dikirim via Truk Engkel Box (Supir: Bpk. Joko)"
                   className="w-full px-3 py-2 text-sm rounded-xl bg-rakta-card border border-rakta-subtle text-rakta-navy placeholder:text-rakta-muted/60 focus:outline-none focus:border-rakta-primary focus:ring-2 focus:ring-rakta-primary/20"
                 />
+              </div>
+
+              <div className="space-y-2 pt-2 border-t border-rakta-subtle/60">
+                <label className="block text-xs font-semibold text-rakta-navy">
+                  Bukti Foto Pengiriman / Kedatangan (Opsional)
+                </label>
+                <div>
+                  <span className="text-[11px] text-rakta-muted block mb-1">Unggah berkas foto:</span>
+                  <input
+                    type="file"
+                    name="foto_file"
+                    accept="image/*"
+                    className="w-full text-xs text-rakta-navy file:mr-3 file:py-1.5 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-rakta-surface file:text-rakta-navy hover:file:bg-rakta-subtle/80 cursor-pointer"
+                  />
+                </div>
+                <div>
+                  <span className="text-[11px] text-rakta-muted block mb-1">Atau masukkan URL gambar:</span>
+                  <input
+                    type="url"
+                    name="foto_url"
+                    placeholder="https://example.com/foto-bukti.jpg"
+                    className="w-full px-3 py-1.5 text-xs rounded-xl bg-rakta-card border border-rakta-subtle text-rakta-navy placeholder:text-rakta-muted/60 focus:outline-none focus:border-rakta-primary focus:ring-2 focus:ring-rakta-primary/20"
+                  />
+                </div>
               </div>
 
               <div className="flex items-center justify-end gap-3 pt-3 border-t border-rakta-subtle/60">
@@ -935,6 +1073,181 @@ export default function RestockManager({
           </div>
         </div>
       )}
+
+      {/* MODAL: Tandai Tiba & Mulai Pemeriksaan Fisik (Warehouse Manager) */}
+      {modalMode === "inspect" && selectedOrder && (
+        <div className="fixed inset-0 z-50 bg-rakta-navy/40 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-rakta-card border border-rakta-subtle/80 rounded-2xl w-full max-w-md p-6 rakta-card-shadow relative my-8 animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between pb-3 border-b border-rakta-subtle/60">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-full bg-amber-50 text-amber-700 flex items-center justify-center">
+                  <CheckCircle2 className="w-4 h-4" />
+                </div>
+                <h3 className="text-base font-bold text-rakta-navy">
+                  Konfirmasi Kedatangan Barang
+                </h3>
+              </div>
+              <button
+                onClick={() => {
+                  setModalMode(null);
+                  setSelectedOrder(null);
+                }}
+                className="text-rakta-muted hover:text-rakta-navy p-1 rounded-full hover:bg-rakta-surface transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {inspectState?.error && (
+              <div className="mt-3 p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs">
+                {inspectState.error}
+              </div>
+            )}
+
+            <p className="text-xs text-rakta-muted mt-3">
+              Tandai barang pesanan <span className="font-bold text-rakta-navy">{selectedOrder.nomor_po}</span> telah tiba di gudang. Status akan beralih ke <span className="font-semibold text-amber-700">Inspecting</span> agar Staff Gudang dapat melakukan pemeriksaan fisik dan menginput dokumen masuk.
+            </p>
+
+            <form action={inspectAction} encType="multipart/form-data" className="mt-4 space-y-4">
+              <input type="hidden" name="order_id" value={selectedOrder.id} />
+
+              <div className="space-y-2">
+                <label className="block text-xs font-semibold text-rakta-navy">
+                  Foto Bukti Kedatangan Fisik (Opsional)
+                </label>
+                <div>
+                  <span className="text-[11px] text-rakta-muted block mb-1">Unggah berkas foto langsung:</span>
+                  <input
+                    type="file"
+                    name="foto_file"
+                    accept="image/*"
+                    className="w-full text-xs text-rakta-navy file:mr-3 file:py-1.5 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-rakta-surface file:text-rakta-navy hover:file:bg-rakta-subtle/80 cursor-pointer"
+                  />
+                </div>
+                <div>
+                  <span className="text-[11px] text-rakta-muted block mb-1">Atau masukkan URL gambar:</span>
+                  <input
+                    type="url"
+                    name="foto_url"
+                    placeholder="https://example.com/foto-bukti.jpg"
+                    className="w-full px-3 py-1.5 text-xs rounded-xl bg-rakta-card border border-rakta-subtle text-rakta-navy placeholder:text-rakta-muted/60 focus:outline-none focus:border-rakta-primary focus:ring-2 focus:ring-rakta-primary/20"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-rakta-navy mb-1">
+                  Instruksi / Catatan Pemeriksaan
+                </label>
+                <textarea
+                  name="catatan_tiba"
+                  rows={2}
+                  placeholder="Contoh: Barang telah tiba di loading dock A. Harap periksa segel kardus dan jumlah barang."
+                  className="w-full px-3 py-2 text-xs rounded-xl bg-rakta-card border border-rakta-subtle text-rakta-navy placeholder:text-rakta-muted/60 focus:outline-none focus:border-rakta-primary focus:ring-2 focus:ring-rakta-primary/20 resize-none"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-rakta-subtle/60">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setModalMode(null);
+                    setSelectedOrder(null);
+                  }}
+                  className="rounded-full text-xs font-semibold px-4 py-2"
+                >
+                  Batal
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={isInspecting}
+                  className="rounded-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-5 py-2 flex items-center gap-1.5 shadow-xs"
+                >
+                  {isInspecting && <Loader2 className="w-4 h-4 animate-spin" />}
+                  <span>{isInspecting ? "Memproses..." : "Konfirmasi Tiba & Cek Fisik"}</span>
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: Ajukan Klaim Refund (Warehouse Manager) */}
+      {modalMode === "refund" && selectedOrder && (
+        <div className="fixed inset-0 z-50 bg-rakta-navy/40 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-rakta-card border border-rakta-subtle/80 rounded-2xl w-full max-w-md p-6 rakta-card-shadow relative my-8 animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between pb-3 border-b border-rakta-subtle/60">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-full bg-rose-50 text-rose-700 flex items-center justify-center">
+                  <ShieldAlert className="w-4 h-4" />
+                </div>
+                <h3 className="text-base font-bold text-rakta-navy">
+                  Pengajuan Klaim Refund / Retur
+                </h3>
+              </div>
+              <button
+                onClick={() => {
+                  setModalMode(null);
+                  setSelectedOrder(null);
+                }}
+                className="text-rakta-muted hover:text-rakta-navy p-1 rounded-full hover:bg-rakta-surface transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {refundState?.error && (
+              <div className="mt-3 p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs">
+                {refundState.error}
+              </div>
+            )}
+
+            <p className="text-xs text-rakta-muted mt-3">
+              Ajukan klaim refund kepada mitra supplier untuk pesanan <span className="font-bold text-rakta-navy">{selectedOrder.nomor_po}</span> yang ditolak karena cacat fisik atau tidak sesuai spesifikasi.
+            </p>
+
+            <form action={refundAction} className="mt-4 space-y-4">
+              <input type="hidden" name="order_id" value={selectedOrder.id} />
+
+              <div>
+                <label className="block text-xs font-semibold text-rakta-navy mb-1">
+                  Rincian Klaim Refund &amp; Kerusakan <span className="text-rose-500">*</span>
+                </label>
+                <textarea
+                  name="refund_note"
+                  rows={3}
+                  required
+                  placeholder="Contoh: Barang mengalami kerusakan segel dan 15 unit penyok saat tiba di gudang. Meminta pengembalian dana 100% atau penggantian batch pengiriman baru."
+                  className="w-full px-3 py-2 text-xs rounded-xl bg-rakta-card border border-rakta-subtle text-rakta-navy placeholder:text-rakta-muted/60 focus:outline-none focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20 resize-none"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-rakta-subtle/60">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setModalMode(null);
+                    setSelectedOrder(null);
+                  }}
+                  className="rounded-full text-xs font-semibold px-4 py-2"
+                >
+                  Batal
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={isRefunding}
+                  className="rounded-full bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold px-5 py-2 flex items-center gap-1.5 shadow-xs"
+                >
+                  {isRefunding && <Loader2 className="w-4 h-4 animate-spin" />}
+                  <span>{isRefunding ? "Mengajukan..." : "Kirim Klaim Refund"}</span>
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
       {/* Modal Konfirmasi Tindakan PO */}
       <ConfirmModal
         isOpen={Boolean(confirmDialog)}
@@ -952,7 +1265,7 @@ export default function RestockManager({
             ? `Konfirmasi pesanan ${confirmDialog?.order?.nomor_po}? Pesanan akan masuk ke tahap persiapan barang oleh Supplier.`
             : confirmDialog?.type === "cancel"
             ? `Apakah Anda yakin ingin membatalkan pesanan ${confirmDialog?.order?.nomor_po}?`
-            : `Tandai barang pesanan ${confirmDialog?.order?.nomor_po} telah tiba di gudang?\n\nCatatan: Status akan berubah menjadi 'Received'. Jumlah stok produk tidak bertambah sampai Incoming Transaction disetujui di menu Transaksi.`
+            : `Tandai barang pesanan ${confirmDialog?.order?.nomor_po} telah tiba di gudang?\n\nCatatan: Status akan berubah menjadi 'Inspecting' untuk pemeriksaan fisik. Jumlah stok produk tidak bertambah sampai Incoming Transaction disetujui di menu Transaksi.`
         }
         confirmText={
           confirmDialog?.type === "confirm"
