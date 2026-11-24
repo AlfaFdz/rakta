@@ -1,4 +1,8 @@
-# RAKTA: Sistem Manajemen Gudang
+<img src="public/logo.svg" alt="Logo RAKTA" width="65" height="65" align="left" />
+
+# RAKTA — Warehouse Management System
+
+<br clear="left"/>
 
 RAKTA adalah aplikasi sistem manajemen gudang (Warehouse Management System) berbasis web yang dirancang untuk mengelola inventaris produk, alur pengadaan barang (Purchase Order / Restock), mutasi barang masuk dan keluar, serta kemitraan supplier. Sistem ini dibangun dengan Next.js App Router, database PostgreSQL murni menggunakan koneksi pool `pg` (tanpa ORM), dan Tailwind CSS.
 
