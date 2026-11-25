@@ -14,6 +14,7 @@ import {
 } from "@/app/actions/transactions";
 import Button from "@/components/ui/Button";
 import ConfirmModal from "@/components/ConfirmModal";
+import Pagination from "@/components/ui/Pagination";
 import { formatTanggal } from "@/lib/format";
 import { exportToCsv } from "@/lib/exportCsv";
 import {
@@ -70,6 +71,10 @@ export default function TransactionManager({
   const [activeTrxId, setActiveTrxId] = useState(null);
   const [confirmDialog, setConfirmDialog] = useState(null);
 
+  // State navigasi halaman (Pagination & Lazy Rendering)
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
   // Filter daftar transaksi
   const filteredTransactions = transactions.filter((t) => {
     const q = searchQuery.toLowerCase().trim();
@@ -105,6 +110,13 @@ export default function TransactionManager({
 
     return matchSearch && matchType && matchStatus;
   });
+
+  // Potong hanya data yang aktif pada halaman saat ini (Lazy Windowing Slicing)
+  const totalItems = filteredTransactions.length;
+  const totalPages = Math.ceil(totalItems / pageSize) || 1;
+  const safePage = Math.max(1, Math.min(currentPage, totalPages));
+  const startIndex = (safePage - 1) * pageSize;
+  const paginatedTransactions = filteredTransactions.slice(startIndex, startIndex + pageSize);
 
   // Action state untuk Barang Keluar
   const [outState, outAction, isOutProgress] = useActionState(async (prev, formData) => {
@@ -319,12 +331,18 @@ export default function TransactionManager({
               type="text"
               placeholder="Cari nomor transaksi, produk, customer, atau supplier..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setCurrentPage(1);
+              }}
               className="w-full pl-9 pr-4 py-2 text-xs rounded-xl bg-white border border-rakta-border text-rakta-navy placeholder:text-rakta-muted/60 focus:outline-none focus:border-rakta-primary focus:ring-1 focus:ring-rakta-primary/20 transition-all"
             />
             {searchQuery && (
               <button
-                onClick={() => setSearchQuery("")}
+                onClick={() => {
+                  setSearchQuery("");
+                  setCurrentPage(1);
+                }}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-rakta-muted hover:text-rakta-navy"
               >
                 <X className="w-3.5 h-3.5" />
@@ -335,7 +353,10 @@ export default function TransactionManager({
           {/* Filter Tipe Transaksi */}
           <div className="inline-flex p-0.5 bg-rakta-surface border border-rakta-border rounded-xl shrink-0">
             <button
-              onClick={() => setTypeFilter("all")}
+              onClick={() => {
+                setTypeFilter("all");
+                setCurrentPage(1);
+              }}
               className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${
                 typeFilter === "all"
                   ? "bg-white text-rakta-navy shadow-2xs font-semibold"
@@ -345,7 +366,10 @@ export default function TransactionManager({
               Semua
             </button>
             <button
-              onClick={() => setTypeFilter("incoming")}
+              onClick={() => {
+                setTypeFilter("incoming");
+                setCurrentPage(1);
+              }}
               className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${
                 typeFilter === "incoming"
                   ? "bg-white text-emerald-700 shadow-2xs font-semibold"
@@ -355,7 +379,10 @@ export default function TransactionManager({
               Masuk
             </button>
             <button
-              onClick={() => setTypeFilter("outgoing")}
+              onClick={() => {
+                setTypeFilter("outgoing");
+                setCurrentPage(1);
+              }}
               className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${
                 typeFilter === "outgoing"
                   ? "bg-white text-rose-700 shadow-2xs font-semibold"
@@ -365,7 +392,10 @@ export default function TransactionManager({
               Keluar
             </button>
             <button
-              onClick={() => setTypeFilter("adjustment")}
+              onClick={() => {
+                setTypeFilter("adjustment");
+                setCurrentPage(1);
+              }}
               className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${
                 typeFilter === "adjustment"
                   ? "bg-white text-sky-700 shadow-2xs font-semibold"
@@ -381,7 +411,10 @@ export default function TransactionManager({
         <div className="flex flex-wrap items-center gap-3">
           <select
             value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
+            onChange={(e) => {
+              setStatusFilter(e.target.value);
+              setCurrentPage(1);
+            }}
             className="pl-3 pr-8 py-2 text-xs rounded-xl bg-white border border-rakta-border text-rakta-navy focus:outline-none focus:border-rakta-primary focus:ring-1 focus:ring-rakta-primary/20 transition-all appearance-none cursor-pointer"
           >
             <option value="all">Semua Status</option>
@@ -538,7 +571,7 @@ export default function TransactionManager({
                   </td>
                 </tr>
               ) : (
-                filteredTransactions.map((t) => {
+                paginatedTransactions.map((t) => {
                   const isMasuk = t.type === "incoming" || t.tipe === "masuk";
                   const isKeluar = t.type === "outgoing" || t.tipe === "keluar";
                   const isPenyesuaian =
@@ -822,6 +855,20 @@ export default function TransactionManager({
             </tbody>
           </table>
         </div>
+
+        {/* Navigasi Halaman (Hanya me-render data aktif di DOM) */}
+        <Pagination
+          currentPage={safePage}
+          totalPages={totalPages}
+          totalItems={totalItems}
+          pageSize={pageSize}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={(newSize) => {
+            setPageSize(newSize);
+            setCurrentPage(1);
+          }}
+          itemName="transaksi"
+        />
       </div>
 
       {/* MODAL: Buat Dokumen Barang Masuk dari PO Received (Staff Gudang) */}

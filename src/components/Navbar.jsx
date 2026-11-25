@@ -86,9 +86,6 @@ export default function Navbar({ session }) {
               <span className="font-extrabold text-lg tracking-tight text-rakta-navy">
                 RAKTA
               </span>
-              <span className="hidden sm:inline-block text-[10px] bg-rakta-bg/70 text-rakta-navy px-2 py-0.5 rounded-lg font-mono font-semibold border border-rakta-border">
-                Gudang
-              </span>
             </div>
           </Link>
 

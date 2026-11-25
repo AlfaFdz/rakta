@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { updateSupplierStatusAction } from "@/app/actions/suppliers";
 import Button from "@/components/ui/Button";
+import Pagination from "@/components/ui/Pagination";
 import { formatTanggal } from "@/lib/format";
 import { CheckCircle2, Search, Building2, Mail, Phone, AlertCircle, X, Loader2 } from "lucide-react";
 
@@ -14,6 +15,10 @@ export default function SupplierTable({ suppliers = [], counts = {} }) {
   const [loadingId, setLoadingId] = useState(null);
   const [rejectModalSupplier, setRejectModalSupplier] = useState(null);
   const [rejectionReasonInput, setRejectionReasonInput] = useState("");
+
+  // State navigasi halaman (Pagination & Lazy Rendering)
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   // Filter supplier berdasarkan status tab dan teks pencarian
   const filteredSuppliers = suppliers.filter((s) => {
@@ -27,6 +32,13 @@ export default function SupplierTable({ suppliers = [], counts = {} }) {
       s.kontak?.toLowerCase().includes(q);
     return matchStatus && matchSearch;
   });
+
+  // Potong hanya data yang aktif pada halaman saat ini (Lazy Windowing Slicing)
+  const totalItems = filteredSuppliers.length;
+  const totalPages = Math.ceil(totalItems / pageSize) || 1;
+  const safePage = Math.max(1, Math.min(currentPage, totalPages));
+  const startIndex = (safePage - 1) * pageSize;
+  const paginatedSuppliers = filteredSuppliers.slice(startIndex, startIndex + pageSize);
 
   const handleStatusChange = (supplierId, newStatus) => {
     if (newStatus === "rejected") {
@@ -127,7 +139,10 @@ export default function SupplierTable({ suppliers = [], counts = {} }) {
         <div className="inline-flex p-1 bg-rakta-surface border border-rakta-border rounded-xl overflow-x-auto">
           <button
             type="button"
-            onClick={() => setActiveFilter("all")}
+            onClick={() => {
+              setActiveFilter("all");
+              setCurrentPage(1);
+            }}
             className={`px-3 py-1.5 rounded-lg text-xs transition-all ${
               activeFilter === "all"
                 ? "bg-rakta-bg/80 text-rakta-navy font-semibold shadow-xs"
@@ -138,7 +153,10 @@ export default function SupplierTable({ suppliers = [], counts = {} }) {
           </button>
           <button
             type="button"
-            onClick={() => setActiveFilter("pending")}
+            onClick={() => {
+              setActiveFilter("pending");
+              setCurrentPage(1);
+            }}
             className={`px-3 py-1.5 rounded-lg text-xs transition-all ${
               activeFilter === "pending"
                 ? "bg-amber-100/80 text-amber-900 font-semibold shadow-xs"
@@ -149,7 +167,10 @@ export default function SupplierTable({ suppliers = [], counts = {} }) {
           </button>
           <button
             type="button"
-            onClick={() => setActiveFilter("approved")}
+            onClick={() => {
+              setActiveFilter("approved");
+              setCurrentPage(1);
+            }}
             className={`px-3 py-1.5 rounded-lg text-xs transition-all ${
               activeFilter === "approved"
                 ? "bg-emerald-100/80 text-emerald-900 font-semibold shadow-xs"
@@ -160,7 +181,10 @@ export default function SupplierTable({ suppliers = [], counts = {} }) {
           </button>
           <button
             type="button"
-            onClick={() => setActiveFilter("rejected")}
+            onClick={() => {
+              setActiveFilter("rejected");
+              setCurrentPage(1);
+            }}
             className={`px-3 py-1.5 rounded-lg text-xs transition-all ${
               activeFilter === "rejected"
                 ? "bg-rose-100/80 text-rose-900 font-semibold shadow-xs"
@@ -178,12 +202,18 @@ export default function SupplierTable({ suppliers = [], counts = {} }) {
             type="text"
             placeholder="Cari perusahaan / kontak..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setCurrentPage(1);
+            }}
             className="w-full pl-9 pr-8 py-2 text-sm bg-white border border-rakta-border rounded-xl text-rakta-navy placeholder:text-rakta-muted/60 focus:outline-none focus:border-rakta-primary focus:ring-2 focus:ring-rakta-primary/20 transition-all"
           />
           {searchQuery && (
             <button
-              onClick={() => setSearchQuery("")}
+              onClick={() => {
+                setSearchQuery("");
+                setCurrentPage(1);
+              }}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-rakta-muted hover:text-rakta-navy"
             >
               <X className="w-3.5 h-3.5" />
@@ -211,7 +241,7 @@ export default function SupplierTable({ suppliers = [], counts = {} }) {
                 </tr>
               </thead>
               <tbody className="divide-y divide-rakta-border/40 text-rakta-navy">
-                {filteredSuppliers.map((s) => {
+                {paginatedSuppliers.map((s) => {
                   const isLoading = isPending && loadingId === s.id;
 
                   return (
@@ -301,6 +331,20 @@ export default function SupplierTable({ suppliers = [], counts = {} }) {
             </table>
           </div>
         )}
+
+        {/* Navigasi Halaman (Hanya me-render data aktif di DOM) */}
+        <Pagination
+          currentPage={safePage}
+          totalPages={totalPages}
+          totalItems={totalItems}
+          pageSize={pageSize}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={(newSize) => {
+            setPageSize(newSize);
+            setCurrentPage(1);
+          }}
+          itemName="supplier"
+        />
       </div>
 
       {/* Modal Input Alasan Penolakan Supplier (Wajib) */}

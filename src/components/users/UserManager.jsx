@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { updateUserStatusAction } from "@/app/actions/users";
 import Button from "@/components/ui/Button";
 import ConfirmModal from "@/components/ConfirmModal";
+import Pagination from "@/components/ui/Pagination";
 import { formatTanggal } from "@/lib/format";
 import {
   Users,
@@ -31,6 +32,10 @@ export default function UserManager({ users = [], currentUserId }) {
   const [rejectModalUser, setRejectModalUser] = useState(null);
   const [rejectionReasonInput, setRejectionReasonInput] = useState("");
 
+  // State navigasi halaman (Pagination & Lazy Rendering)
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
   const filteredUsers = users.filter((u) => {
     const q = searchQuery.toLowerCase().trim();
     const matchSearch =
@@ -45,6 +50,13 @@ export default function UserManager({ users = [], currentUserId }) {
 
     return matchSearch && matchRole && matchStatus;
   });
+
+  // Potong hanya data yang aktif pada halaman saat ini (Lazy Windowing Slicing)
+  const totalItems = filteredUsers.length;
+  const totalPages = Math.ceil(totalItems / pageSize) || 1;
+  const safePage = Math.max(1, Math.min(currentPage, totalPages));
+  const startIndex = (safePage - 1) * pageSize;
+  const paginatedUsers = filteredUsers.slice(startIndex, startIndex + pageSize);
 
   const handleToggleStatus = (user, newStatus) => {
     if (user.id === currentUserId) {
@@ -158,12 +170,18 @@ export default function UserManager({ users = [], currentUserId }) {
               type="text"
               placeholder="Cari nama, email, perusahaan, atau kontak..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setCurrentPage(1);
+              }}
               className="w-full pl-9 pr-8 py-2 text-sm rounded-xl bg-white border border-rakta-border text-rakta-navy placeholder:text-rakta-muted/60 focus:outline-none focus:border-rakta-primary focus:ring-2 focus:ring-rakta-primary/20 transition-all"
             />
             {searchQuery && (
               <button
-                onClick={() => setSearchQuery("")}
+                onClick={() => {
+                  setSearchQuery("");
+                  setCurrentPage(1);
+                }}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-rakta-muted hover:text-rakta-navy"
               >
                 <X className="w-3.5 h-3.5" />
@@ -176,7 +194,10 @@ export default function UserManager({ users = [], currentUserId }) {
             <Filter className="w-4 h-4 text-rakta-muted absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
             <select
               value={roleFilter}
-              onChange={(e) => setRoleFilter(e.target.value)}
+              onChange={(e) => {
+                setRoleFilter(e.target.value);
+                setCurrentPage(1);
+              }}
               className="w-full pl-9 pr-8 py-2 text-sm rounded-xl bg-white border border-rakta-border text-rakta-navy focus:outline-none focus:border-rakta-primary focus:ring-2 focus:ring-rakta-primary/20 transition-all appearance-none cursor-pointer"
             >
               <option value="all">Semua Peran</option>
@@ -191,7 +212,10 @@ export default function UserManager({ users = [], currentUserId }) {
         {/* Filter Status Kapsul */}
         <div className="inline-flex p-1 bg-rakta-surface border border-rakta-border rounded-xl shrink-0">
           <button
-            onClick={() => setStatusFilter("all")}
+            onClick={() => {
+              setStatusFilter("all");
+              setCurrentPage(1);
+            }}
             className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
               statusFilter === "all"
                 ? "bg-rakta-bg/80 text-rakta-navy shadow-xs"
@@ -201,7 +225,10 @@ export default function UserManager({ users = [], currentUserId }) {
             Semua
           </button>
           <button
-            onClick={() => setStatusFilter("approved")}
+            onClick={() => {
+              setStatusFilter("approved");
+              setCurrentPage(1);
+            }}
             className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
               statusFilter === "approved"
                 ? "bg-emerald-100/80 text-emerald-900 shadow-xs"
@@ -211,7 +238,10 @@ export default function UserManager({ users = [], currentUserId }) {
             Aktif
           </button>
           <button
-            onClick={() => setStatusFilter("pending")}
+            onClick={() => {
+              setStatusFilter("pending");
+              setCurrentPage(1);
+            }}
             className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
               statusFilter === "pending"
                 ? "bg-amber-100/80 text-amber-900 shadow-xs"
@@ -221,7 +251,10 @@ export default function UserManager({ users = [], currentUserId }) {
             Menunggu
           </button>
           <button
-            onClick={() => setStatusFilter("rejected")}
+            onClick={() => {
+              setStatusFilter("rejected");
+              setCurrentPage(1);
+            }}
             className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
               statusFilter === "rejected"
                 ? "bg-rose-100/80 text-rose-900 shadow-xs"
@@ -259,7 +292,7 @@ export default function UserManager({ users = [], currentUserId }) {
                   </td>
                 </tr>
               ) : (
-                filteredUsers.map((u) => {
+                paginatedUsers.map((u) => {
                   const roleConfig = roleMeta[u.role] || { label: u.role, badge: "bg-rakta-surface text-rakta-navy border-rakta-border" };
                   const statusConfig = statusMeta[u.status] || { label: u.status, badge: "bg-rakta-surface text-rakta-navy border-rakta-border", dot: "bg-rakta-muted" };
                   const isCurrent = u.id === currentUserId;
@@ -381,6 +414,20 @@ export default function UserManager({ users = [], currentUserId }) {
             </tbody>
           </table>
         </div>
+
+        {/* Navigasi Halaman (Hanya me-render data aktif di DOM) */}
+        <Pagination
+          currentPage={safePage}
+          totalPages={totalPages}
+          totalItems={totalItems}
+          pageSize={pageSize}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={(newSize) => {
+            setPageSize(newSize);
+            setCurrentPage(1);
+          }}
+          itemName="pengguna"
+        />
       </div>
 
       {/* Modal Konfirmasi Status Pengguna */}

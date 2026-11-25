@@ -5,6 +5,7 @@ import { createCategoryAction, updateCategoryAction, deleteCategoryAction } from
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import ConfirmModal from "@/components/ConfirmModal";
+import Pagination from "@/components/ui/Pagination";
 import { formatTanggal } from "@/lib/format";
 import { Plus, Pencil, Trash2, Search, Package, AlertCircle, CheckCircle2, X } from "lucide-react";
 
@@ -17,6 +18,10 @@ export default function CategoryManager({ categories = [] }) {
   const [deletingId, setDeletingId] = useState(null);
   const [confirmDeleteCat, setConfirmDeleteCat] = useState(null);
 
+  // State navigasi halaman (Pagination & Lazy Rendering)
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
   // Filter pencarian kategori
   const filteredCategories = categories.filter((c) => {
     const q = searchQuery.toLowerCase();
@@ -26,6 +31,13 @@ export default function CategoryManager({ categories = [] }) {
       c.deskripsi?.toLowerCase().includes(q)
     );
   });
+
+  // Potong hanya data yang aktif pada halaman saat ini (Lazy Windowing Slicing)
+  const totalItems = filteredCategories.length;
+  const totalPages = Math.ceil(totalItems / pageSize) || 1;
+  const safePage = Math.max(1, Math.min(currentPage, totalPages));
+  const startIndex = (safePage - 1) * pageSize;
+  const paginatedCategories = filteredCategories.slice(startIndex, startIndex + pageSize);
 
   // Action state untuk form tambah kategori
   const [addState, addAction, isAdding] = useActionState(
@@ -114,12 +126,18 @@ export default function CategoryManager({ categories = [] }) {
             type="text"
             placeholder="Cari nama atau deskripsi kategori..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setCurrentPage(1);
+            }}
             className="w-full pl-9 pr-8 py-2 text-sm bg-white border border-rakta-border rounded-xl text-rakta-navy placeholder:text-rakta-muted/60 focus:outline-none focus:border-rakta-primary focus:ring-2 focus:ring-rakta-primary/20 transition-all"
           />
           {searchQuery && (
             <button
-              onClick={() => setSearchQuery("")}
+              onClick={() => {
+                setSearchQuery("");
+                setCurrentPage(1);
+              }}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-rakta-muted hover:text-rakta-navy"
             >
               <X className="w-3.5 h-3.5" />
@@ -159,7 +177,7 @@ export default function CategoryManager({ categories = [] }) {
                 </tr>
               </thead>
               <tbody className="divide-y divide-rakta-border/40 text-rakta-navy">
-                {filteredCategories.map((cat) => {
+                {paginatedCategories.map((cat) => {
                   const isCurrentDeleting = isDeleting && deletingId === cat.id;
 
                   return (
@@ -217,6 +235,20 @@ export default function CategoryManager({ categories = [] }) {
             </table>
           </div>
         )}
+
+        {/* Navigasi Halaman (Hanya me-render data aktif di DOM) */}
+        <Pagination
+          currentPage={safePage}
+          totalPages={totalPages}
+          totalItems={totalItems}
+          pageSize={pageSize}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={(newSize) => {
+            setPageSize(newSize);
+            setCurrentPage(1);
+          }}
+          itemName="kategori"
+        />
       </div>
 
       {/* Modal / Dialog Form Tambah Kategori */}

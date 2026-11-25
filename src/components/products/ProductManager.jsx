@@ -6,6 +6,7 @@ import { createProductAction, updateProductAction, deleteProductAction, adjustSt
 import Button from "@/components/ui/Button";
 import ConfirmModal from "@/components/ConfirmModal";
 import StockBadge from "@/components/ui/StockBadge";
+import Pagination from "@/components/ui/Pagination";
 import { formatRupiah, hitungStatusStok } from "@/lib/format";
 import { exportToCsv } from "@/lib/exportCsv";
 import {
@@ -46,6 +47,10 @@ export default function ProductManager({
   const [deletingId, setDeletingId] = useState(null);
   const [confirmDeleteProd, setConfirmDeleteProd] = useState(null);
 
+  // State navigasi halaman (Pagination & Lazy Rendering)
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
   // Filter daftar produk
   const filteredProducts = products.filter((p) => {
     // 1. Pencarian teks (Nama, SKU, Lokasi Rak)
@@ -72,6 +77,13 @@ export default function ProductManager({
 
     return matchSearch && matchCategory && matchStock;
   });
+
+  // Potong hanya data yang aktif pada halaman saat ini (Lazy Windowing Slicing)
+  const totalItems = filteredProducts.length;
+  const totalPages = Math.ceil(totalItems / pageSize) || 1;
+  const safePage = Math.max(1, Math.min(currentPage, totalPages));
+  const startIndex = (safePage - 1) * pageSize;
+  const paginatedProducts = filteredProducts.slice(startIndex, startIndex + pageSize);
 
   // Action state untuk Tambah Produk
   const [addState, addAction, isAdding] = useActionState(async (prev, formData) => {
@@ -209,12 +221,18 @@ export default function ProductManager({
               type="text"
               placeholder="Cari nama produk, SKU, atau rak..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setCurrentPage(1);
+              }}
               className="w-full pl-9 pr-8 py-2 text-sm rounded-xl bg-white border border-rakta-border text-rakta-navy placeholder:text-rakta-muted/60 focus:outline-none focus:border-rakta-primary focus:ring-2 focus:ring-rakta-primary/20 transition-all"
             />
             {searchQuery && (
               <button
-                onClick={() => setSearchQuery("")}
+                onClick={() => {
+                  setSearchQuery("");
+                  setCurrentPage(1);
+                }}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-rakta-muted hover:text-rakta-navy"
               >
                 <X className="w-3.5 h-3.5" />
@@ -227,7 +245,10 @@ export default function ProductManager({
             <Filter className="w-4 h-4 text-rakta-muted absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
             <select
               value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
+              onChange={(e) => {
+                setSelectedCategory(e.target.value);
+                setCurrentPage(1);
+              }}
               className="w-full pl-9 pr-8 py-2 text-sm rounded-xl bg-white border border-rakta-border text-rakta-navy focus:outline-none focus:border-rakta-primary focus:ring-2 focus:ring-rakta-primary/20 transition-all appearance-none cursor-pointer"
             >
               <option value="all">Semua Kategori</option>
@@ -245,7 +266,10 @@ export default function ProductManager({
           {/* Filter Tab Status Stok */}
           <div className="inline-flex p-1 bg-rakta-surface border border-rakta-border rounded-xl">
             <button
-              onClick={() => setStockFilter("all")}
+              onClick={() => {
+                setStockFilter("all");
+                setCurrentPage(1);
+              }}
               className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
                 stockFilter === "all"
                   ? "bg-rakta-bg/80 text-rakta-navy shadow-xs"
@@ -255,7 +279,10 @@ export default function ProductManager({
               Semua
             </button>
             <button
-              onClick={() => setStockFilter("aman")}
+              onClick={() => {
+                setStockFilter("aman");
+                setCurrentPage(1);
+              }}
               className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
                 stockFilter === "aman"
                   ? "bg-emerald-100/80 text-emerald-900 shadow-xs"
@@ -265,7 +292,10 @@ export default function ProductManager({
               Stok Aman
             </button>
             <button
-              onClick={() => setStockFilter("kritis")}
+              onClick={() => {
+                setStockFilter("kritis");
+                setCurrentPage(1);
+              }}
               className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
                 stockFilter === "kritis"
                   ? "bg-rose-100/80 text-rose-900 shadow-xs"
@@ -328,7 +358,7 @@ export default function ProductManager({
                   </td>
                 </tr>
               ) : (
-                filteredProducts.map((p) => {
+                paginatedProducts.map((p) => {
                   const statusInfo = hitungStatusStok(p.jumlah_stok, p.stok_minimum, p.stok_low);
 
                   return (
@@ -477,6 +507,20 @@ export default function ProductManager({
             </tbody>
           </table>
         </div>
+
+        {/* Navigasi Halaman (Hanya me-render data aktif di DOM) */}
+        <Pagination
+          currentPage={safePage}
+          totalPages={totalPages}
+          totalItems={totalItems}
+          pageSize={pageSize}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={(newSize) => {
+            setPageSize(newSize);
+            setCurrentPage(1);
+          }}
+          itemName="produk"
+        />
       </div>
 
       {/* MODAL: Tambah / Edit Produk (Admin & Warehouse Manager) */}

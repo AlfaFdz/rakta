@@ -14,6 +14,7 @@ import {
 } from "@/app/actions/restock";
 import Button from "@/components/ui/Button";
 import ConfirmModal from "@/components/ConfirmModal";
+import Pagination from "@/components/ui/Pagination";
 import { formatTanggal } from "@/lib/format";
 import { exportToCsv } from "@/lib/exportCsv";
 import {
@@ -51,6 +52,10 @@ export default function RestockManager({
   const [activeActionId, setActiveActionId] = useState(null);
   const [confirmDialog, setConfirmDialog] = useState(null);
 
+  // State navigasi halaman (Pagination & Lazy Rendering)
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
   // Filter daftar pesanan
   const filteredOrders = orders.filter((o) => {
     // 1. Pencarian
@@ -67,6 +72,13 @@ export default function RestockManager({
 
     return matchSearch && matchStatus;
   });
+
+  // Potong hanya data yang aktif pada halaman saat ini (Lazy Windowing Slicing)
+  const totalItems = filteredOrders.length;
+  const totalPages = Math.ceil(totalItems / pageSize) || 1;
+  const safePage = Math.max(1, Math.min(currentPage, totalPages));
+  const startIndex = (safePage - 1) * pageSize;
+  const paginatedOrders = filteredOrders.slice(startIndex, startIndex + pageSize);
 
   // Action state untuk Buat PO (Warehouse Manager)
   const [createState, createAction, isCreating] = useActionState(async (prev, formData) => {
@@ -298,12 +310,18 @@ export default function RestockManager({
             type="text"
             placeholder="Cari nomor PO, nama produk, SKU, atau supplier..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setCurrentPage(1);
+            }}
             className="w-full pl-9 pr-8 py-2 text-sm rounded-xl bg-white border border-rakta-border text-rakta-navy placeholder:text-rakta-muted/60 focus:outline-none focus:border-rakta-primary focus:ring-2 focus:ring-rakta-primary/20 transition-all"
           />
           {searchQuery && (
             <button
-              onClick={() => setSearchQuery("")}
+              onClick={() => {
+                setSearchQuery("");
+                setCurrentPage(1);
+              }}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-rakta-muted hover:text-rakta-navy"
             >
               <X className="w-3.5 h-3.5" />
@@ -316,7 +334,10 @@ export default function RestockManager({
           {/* Tab Filter Status */}
           <div className="inline-flex p-1 bg-rakta-surface border border-rakta-border rounded-xl overflow-x-auto">
             <button
-              onClick={() => setStatusFilter("all")}
+              onClick={() => {
+                setStatusFilter("all");
+                setCurrentPage(1);
+              }}
               className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
                 statusFilter === "all"
                   ? "bg-rakta-bg/80 text-rakta-navy shadow-xs"
@@ -326,7 +347,10 @@ export default function RestockManager({
               Semua
             </button>
             <button
-              onClick={() => setStatusFilter("pending")}
+              onClick={() => {
+                setStatusFilter("pending");
+                setCurrentPage(1);
+              }}
               className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
                 statusFilter === "pending"
                   ? "bg-amber-100/80 text-amber-900 shadow-xs"
@@ -336,7 +360,10 @@ export default function RestockManager({
               Menunggu
             </button>
             <button
-              onClick={() => setStatusFilter("confirmed")}
+              onClick={() => {
+                setStatusFilter("confirmed");
+                setCurrentPage(1);
+              }}
               className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
                 statusFilter === "confirmed"
                   ? "bg-rakta-bg/90 text-rakta-navy shadow-xs"
@@ -346,7 +373,10 @@ export default function RestockManager({
               Dikonfirmasi
             </button>
             <button
-              onClick={() => setStatusFilter("in_transit")}
+              onClick={() => {
+                setStatusFilter("in_transit");
+                setCurrentPage(1);
+              }}
               className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
                 statusFilter === "in_transit"
                   ? "bg-purple-100/80 text-purple-900 shadow-xs"
@@ -356,7 +386,10 @@ export default function RestockManager({
               Dikirim
             </button>
             <button
-              onClick={() => setStatusFilter("inspecting")}
+              onClick={() => {
+                setStatusFilter("inspecting");
+                setCurrentPage(1);
+              }}
               className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
                 statusFilter === "inspecting"
                   ? "bg-amber-100/80 text-amber-900 shadow-xs"
@@ -366,7 +399,10 @@ export default function RestockManager({
               Pemeriksaan
             </button>
             <button
-              onClick={() => setStatusFilter("received")}
+              onClick={() => {
+                setStatusFilter("received");
+                setCurrentPage(1);
+              }}
               className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
                 statusFilter === "received"
                   ? "bg-emerald-100/80 text-emerald-900 shadow-xs"
@@ -376,7 +412,10 @@ export default function RestockManager({
               Selesai
             </button>
             <button
-              onClick={() => setStatusFilter("returned")}
+              onClick={() => {
+                setStatusFilter("returned");
+                setCurrentPage(1);
+              }}
               className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
                 statusFilter === "returned"
                   ? "bg-rose-100/80 text-rose-900 shadow-xs"
@@ -386,7 +425,10 @@ export default function RestockManager({
               Diretur
             </button>
             <button
-              onClick={() => setStatusFilter("rejected")}
+              onClick={() => {
+                setStatusFilter("rejected");
+                setCurrentPage(1);
+              }}
               className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
                 statusFilter === "rejected"
                   ? "bg-rose-100/80 text-rose-900 shadow-xs"
@@ -447,7 +489,7 @@ export default function RestockManager({
                   </td>
                 </tr>
               ) : (
-                filteredOrders.map((order) => {
+                paginatedOrders.map((order) => {
                   const badge = getStatusBadge(order.status);
                   const isProcessing = isPendingAction && activeActionId === order.id;
 
@@ -744,6 +786,20 @@ export default function RestockManager({
             </tbody>
           </table>
         </div>
+
+        {/* Navigasi Halaman (Hanya me-render data aktif di DOM) */}
+        <Pagination
+          currentPage={safePage}
+          totalPages={totalPages}
+          totalItems={totalItems}
+          pageSize={pageSize}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={(newSize) => {
+            setPageSize(newSize);
+            setCurrentPage(1);
+          }}
+          itemName="pesanan"
+        />
       </div>
 
       {/* MODAL: Buat Pesanan Restock Baru (Warehouse Manager) */}
