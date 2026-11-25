@@ -5,7 +5,7 @@ const JWT_SECRET = process.env.JWT_SECRET || "rahasia_rakta_2026";
 const secretKey = new TextEncoder().encode(JWT_SECRET);
 const COOKIE_NAME = "rakta_session";
 
-export async function middleware(request) {
+export async function proxy(request) {
   const { pathname } = request.nextUrl;
   const token = request.cookies.get(COOKIE_NAME)?.value;
 

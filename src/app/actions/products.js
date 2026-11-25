@@ -220,13 +220,13 @@ export async function deleteProductAction(productId) {
 }
 
 // Server Action untuk penyesuaian stok fisik (Stock Opname)
-// Hak akses: staff_gudang dan admin
+// Hak akses: staff_gudang dan warehouse_manager
 // Menggunakan transaksi database murni (BEGIN ... COMMIT)
 export async function adjustStockAction(prevState, formData) {
   const session = await getSession();
 
-  if (!session || (session.role !== "staff_gudang" && session.role !== "admin")) {
-    return { error: "Akses ditolak. Hanya Staff Gudang dan Admin yang dapat menyesuaikan stok fisik." };
+  if (!session || (session.role !== "staff_gudang" && session.role !== "warehouse_manager")) {
+    return { error: "Akses ditolak. Hanya Staff Gudang dan Warehouse Manager yang dapat menyesuaikan stok fisik." };
   }
 
   const productId = parseInt(formData.get("product_id"), 10);
