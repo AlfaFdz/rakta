@@ -9,14 +9,72 @@ RAKTA adalah aplikasi sistem manajemen gudang (Warehouse Management System) berb
 ---
 
 ## Daftar Isi
-1. [Fitur Utama dan Peran Pengguna](#fitur-utama-dan-peran-pengguna)
-2. [Alur Operasional Barang](#alur-operasional-barang)
-3. [Aturan Bisnis dan Validasi Sistem](#aturan-bisnis-dan-validasi-sistem)
-4. [Teknologi yang Digunakan](#teknologi-yang-digunakan)
-5. [Struktur Direktori Proyek](#struktur-direktori-proyek)
-6. [Prasyarat Sistem](#prasyarat-sistem)
-7. [Panduan Instalasi dan Setup Lokal](#panduan-instalasi-dan-setup-lokal)
+1. [Prasyarat Sistem](#prasyarat-sistem)
+2. [Panduan Instalasi dan Setup Lokal](#panduan-instalasi-dan-setup-lokal)
+3. [Fitur Utama dan Peran Pengguna](#fitur-utama-dan-peran-pengguna)
+4. [Alur Operasional Barang](#alur-operasional-barang)
+5. [Aturan Bisnis dan Validasi Sistem](#aturan-bisnis-dan-validasi-sistem)
+6. [Teknologi yang Digunakan](#teknologi-yang-digunakan)
+7. [Struktur Direktori Proyek](#struktur-direktori-proyek)
 8. [Tabel Akun Pengujian](#tabel-akun-pengujian)
+
+---
+
+## Prasyarat Sistem
+
+Sebelum menjalankan proyek, pastikan perangkat Anda telah terpasang:
+- Node.js versi 18.18.0 atau versi 20+ LTS
+- npm (Node Package Manager) bawaan Node.js
+- PostgreSQL versi 14 atau lebih baru yang berjalan aktif pada port default 5432
+- Database client (psql CLI, pgAdmin 4, atau DBeaver)
+
+---
+
+## Panduan Instalasi dan Setup Lokal
+
+### 1. Mengunduh Dependensi
+Buka terminal pada direktori root proyek `rakta`, lalu pasang dependensi:
+```bash
+npm install
+```
+
+### 2. Konfigurasi Variabel Lingkungan
+Salin file `.env.example` menjadi `.env.local`:
+```bash
+cp .env.example .env.local
+```
+
+Buka file `.env.local` dan sesuaikan koneksi database PostgreSQL lokal Anda:
+```env
+DATABASE_URL=postgresql://postgres:password_lokal_anda@localhost:5432/db_rakta
+JWT_SECRET=kunci_rahasia_rakta_jwt_2026
+```
+
+### 3. Pembuatan Database dan Impor Skema
+Pastikan layanan PostgreSQL sedang berjalan. Buat database bernama `db_rakta` lalu impor skema dari `database/db_rakta.sql`.
+
+#### Menggunakan Terminal (psql):
+```bash
+createdb -U postgres db_rakta
+psql -U postgres -d db_rakta -f database/db_rakta.sql
+```
+
+#### Menggunakan pgAdmin 4:
+1. Buat database baru bernama `db_rakta`.
+2. Klik kanan pada database `db_rakta`, lalu pilih **Query Tool**.
+3. Buka file `database/db_rakta.sql`, lalu jalankan query (tekan tombol **Execute** atau F5).
+
+### 4. Menjalankan Server Aplikasi
+Jalankan server Next.js pada mode pengembangan:
+```bash
+npm run dev
+```
+
+Buka peramban web dan akses:
+```
+http://localhost:3000
+```
+
 
 ---
 
@@ -201,63 +259,6 @@ rakta/
 │   └── proxy.js                   # Proxy middleware proteksi rute dan sesi JWT Next.js 16
 ├── package.json
 └── README.md
-```
-
----
-
-## Prasyarat Sistem
-
-Sebelum menjalankan proyek, pastikan perangkat Anda telah terpasang:
-- Node.js versi 18.18.0 atau versi 20+ LTS
-- npm (Node Package Manager) bawaan Node.js
-- PostgreSQL versi 14 atau lebih baru yang berjalan aktif pada port default 5432
-- Database client (psql CLI, pgAdmin 4, atau DBeaver)
-
----
-
-## Panduan Instalasi dan Setup Lokal
-
-### 1. Mengunduh Dependensi
-Buka terminal pada direktori root proyek `rakta`, lalu pasang dependensi:
-```bash
-npm install
-```
-
-### 2. Konfigurasi Variabel Lingkungan
-Salin file `.env.example` menjadi `.env.local`:
-```bash
-cp .env.example .env.local
-```
-
-Buka file `.env.local` dan sesuaikan koneksi database PostgreSQL lokal Anda:
-```env
-DATABASE_URL=postgresql://postgres:password_lokal_anda@localhost:5432/db_rakta
-JWT_SECRET=kunci_rahasia_rakta_jwt_2026
-```
-
-### 3. Pembuatan Database dan Impor Skema
-Pastikan layanan PostgreSQL sedang berjalan. Buat database bernama `db_rakta` lalu impor skema dari `database/db_rakta.sql`.
-
-#### Menggunakan Terminal (psql):
-```bash
-createdb -U postgres db_rakta
-psql -U postgres -d db_rakta -f database/db_rakta.sql
-```
-
-#### Menggunakan pgAdmin 4:
-1. Buat database baru bernama `db_rakta`.
-2. Klik kanan pada database `db_rakta`, lalu pilih **Query Tool**.
-3. Buka file `database/db_rakta.sql`, lalu jalankan query (tekan tombol **Execute** atau F5).
-
-### 4. Menjalankan Server Aplikasi
-Jalankan server Next.js pada mode pengembangan:
-```bash
-npm run dev
-```
-
-Buka peramban web dan akses:
-```
-http://localhost:3000
 ```
 
 ---
