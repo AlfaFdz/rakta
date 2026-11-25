@@ -492,7 +492,7 @@ export default function ProductManager({
                             </Link>
                             <Button
                               onClick={() => openAdjustModal(p)}
-                              className="rounded-xl text-xs font-semibold px-3 py-1.5 bg-rakta-surface hover:bg-rakta-bg border border-rakta-border text-rakta-navy flex items-center gap-1.5 transition-all shadow-none"
+                              className="rounded-xl text-xs font-semibold px-3 py-1.5 hover:bg-rakta-bg border border-rakta-border text-rakta-navy flex items-center gap-1.5 transition-all shadow-none"
                             >
                               <SlidersHorizontal className="w-3.5 h-3.5" />
                               <span>Sesuaikan Stok</span>

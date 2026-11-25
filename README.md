@@ -1,6 +1,6 @@
 <img src="public/logo.svg" alt="Logo RAKTA" width="65" height="65" align="left" />
 
-# RAKTA — Warehouse Management System
+# RAKTA - Warehouse Management System
 
 <br clear="left"/>
 
@@ -27,7 +27,9 @@ Sistem membagi hak akses ke dalam 4 peran dengan tanggung jawab operasional terp
 ### 1. Administrator
 - Akun dibuat dari data awal skema database (tidak tersedia registrasi publik).
 - Memiliki hak akses penuh (CRUD) untuk Master Produk dan Master Kategori.
+- Mengelola akun seluruh pengguna sistem melalui menu Kelola Pengguna.
 - Menyetujui (`Approved`) atau menolak (`Rejected` disertai alasan wajib) pendaftaran akun Mitra Supplier baru.
+- Memiliki hak akses pemantauan (Mode Pantau / read-only) pada modul Restock Order (PO) dan Transaksi Logistik (Incoming dan Outgoing) untuk memonitor seluruh dokumen tanpa izin melakukan mutasi atau persetujuan operasional.
 - Memantau metrik operasional gudang, total valuasi nilai inventori, dan log mutasi transaksi.
 
 ### 2. Warehouse Manager
@@ -152,6 +154,8 @@ Setiap tindakan pembatalan atau penolakan status pada akun pengguna Supplier, pe
 - Enkripsi Kata Sandi: `bcryptjs` 3.0.3
 - Paket Ikon: `lucide-react` 1.77.0
 - Generator Kode QR: `qrcode` 1.5.4
+- Batas Ukuran Unggah Berkas: 10MB via Server Actions (`serverActions.bodySizeLimit` pada `next.config.mjs`)
+- Navigasi Tabel: Paginasi berbasis client-side slicing (`Pagination`) untuk efisiensi rendering data dalam jumlah besar
 
 ---
 
@@ -187,13 +191,14 @@ rakta/
 │   │   ├── restock/               # Komponen alur PO, pengiriman supplier, dan klaim retur
 │   │   ├── suppliers/             # Komponen tabel verifikasi supplier
 │   │   ├── transactions/          # Komponen mutasi barang masuk dan pengeluaran keluar
-│   │   ├── ui/                    # Komponen atomik: Button, Card, Input, StockBadge, ConfirmModal
+│   │   ├── ui/                    # Komponen atomik: Button, Card, Input, Pagination, StockBadge, ConfirmModal
 │   │   └── Navbar.jsx             # Top Navbar terstruktur per peran pengguna
-│   └── lib/
-│       ├── auth.js                # Helper JWT session, enkripsi kata sandi, dan proteksi sesi
-│       ├── db.js                  # Inisialisasi pool koneksi database PostgreSQL
-│       ├── exportCsv.js           # Utilitas ekspor data laporan ke format CSV
-│       └── format.js              # Pemformat mata uang Rupiah, tanggal lokal, dan hitung status stok
+│   ├── lib/
+│   │   ├── auth.js                # Helper JWT session, enkripsi kata sandi, dan proteksi sesi
+│   │   ├── db.js                  # Inisialisasi pool koneksi database PostgreSQL
+│   │   ├── exportCsv.js           # Utilitas ekspor data laporan ke format CSV
+│   │   └── format.js              # Pemformat mata uang Rupiah, tanggal lokal, dan hitung status stok
+│   └── proxy.js                   # Proxy middleware proteksi rute dan sesi JWT Next.js 16
 ├── package.json
 └── README.md
 ```
@@ -263,7 +268,7 @@ Database telah dilengkapi data awal pengguna untuk pengujian alur operasional:
 
 | Peran | Alamat Email | Kata Sandi | Nama Pengguna | Tanggung Jawab Operasional |
 | :--- | :--- | :--- | :--- | :--- |
-| **Administrator** | `admin@rakta.id` | `password123` | Alfaridzi | Master produk, kategori, kelola akun, verifikasi supplier |
+| **Administrator** | `admin@rakta.id` | `password123` | Alfaridzi | Master produk, kategori, kelola akun pengguna, verifikasi supplier, monitoring read-only |
 | **Warehouse Manager** | `manager@rakta.id` | `password123` | Regi Maulana | Master katalog, terbitkan PO restock, approval mutasi, klaim refund |
 | **Staff Gudang** | `staff@rakta.id` | `password123` | Ilham Kurniawan | Cek fisik barang, input barang masuk PO, ajukan barang keluar, packing & shipped |
 
