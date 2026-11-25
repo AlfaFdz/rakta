@@ -27,13 +27,18 @@ async function handleArrivalPhoto(file, fallbackUrl = null) {
 }
 
 // Server Action untuk membuat pengajuan pesanan Restock (PO) baru
-// Hak akses: warehouse_manager & admin
+// Hak akses: warehouse_manager
 export async function createRestockOrderAction(prevState, formData) {
   const session = await getSession();
 
-  if (!session || (session.role !== "warehouse_manager" && session.role !== "admin")) {
+  if (!session || session.role !== "warehouse_manager") {
+    if (session?.role === "admin") {
+      return {
+        error: "Akses ditolak (403 Forbidden). Administrator hanya memiliki hak akses pemantauan (read-only).",
+      };
+    }
     return {
-      error: "Akses ditolak. Hanya Warehouse Manager dan Administrator yang dapat membuat pesanan restock.",
+      error: "Akses ditolak. Hanya Warehouse Manager yang dapat membuat pesanan restock.",
     };
   }
 
@@ -107,14 +112,20 @@ export async function createRestockOrderAction(prevState, formData) {
 }
 
 // Server Action untuk membatalkan pesanan restock yang masih 'pending'
-// Hak akses: warehouse_manager & admin
+// Hak akses: warehouse_manager
 export async function cancelRestockOrderAction(orderId) {
   const session = await getSession();
 
-  if (!session || (session.role !== "warehouse_manager" && session.role !== "admin")) {
+  if (!session || session.role !== "warehouse_manager") {
+    if (session?.role === "admin") {
+      return {
+        success: false,
+        error: "Akses ditolak (403 Forbidden). Administrator hanya memiliki hak akses pemantauan (read-only).",
+      };
+    }
     return {
       success: false,
-      error: "Akses ditolak. Anda tidak memiliki izin membatalkan pesanan restock.",
+      error: "Akses ditolak. Hanya Warehouse Manager yang dapat membatalkan pesanan restock.",
     };
   }
 
@@ -158,6 +169,12 @@ export async function confirmRestockOrderAction(orderId) {
   const session = await getSession();
 
   if (!session || session.role !== "supplier") {
+    if (session?.role === "admin") {
+      return {
+        success: false,
+        error: "Akses ditolak (403 Forbidden). Administrator hanya memiliki hak akses pemantauan (read-only).",
+      };
+    }
     return {
       success: false,
       error: "Akses ditolak. Hanya Mitra Supplier yang dapat mengonfirmasi pesanan pengadaan.",
@@ -204,6 +221,11 @@ export async function rejectRestockOrderAction(prevState, formData) {
   const session = await getSession();
 
   if (!session || session.role !== "supplier") {
+    if (session?.role === "admin") {
+      return {
+        error: "Akses ditolak (403 Forbidden). Administrator hanya memiliki hak akses pemantauan (read-only).",
+      };
+    }
     return {
       error: "Akses ditolak. Hanya Mitra Supplier yang dapat menolak pesanan.",
     };
@@ -251,6 +273,11 @@ export async function shipRestockOrderAction(prevState, formData) {
   const session = await getSession();
 
   if (!session || session.role !== "supplier") {
+    if (session?.role === "admin") {
+      return {
+        error: "Akses ditolak (403 Forbidden). Administrator hanya memiliki hak akses pemantauan (read-only).",
+      };
+    }
     return {
       error: "Akses ditolak. Hanya Mitra Supplier yang dapat memproses pengiriman.",
     };
@@ -306,13 +333,18 @@ export async function shipRestockOrderAction(prevState, formData) {
 }
 
 // Server Action bagi Warehouse Manager untuk menandai barang tiba & mengalihkan ke tahap pemeriksaan fisik (in_transit -> inspecting)
-// Hak akses: warehouse_manager & admin
+// Hak akses: warehouse_manager
 export async function markRestockInspectingAction(prevState, formData) {
   const session = await getSession();
 
-  if (!session || (session.role !== "warehouse_manager" && session.role !== "admin")) {
+  if (!session || session.role !== "warehouse_manager") {
+    if (session?.role === "admin") {
+      return {
+        error: "Akses ditolak (403 Forbidden). Administrator hanya memiliki hak akses pemantauan (read-only).",
+      };
+    }
     return {
-      error: "Akses ditolak. Hanya Warehouse Manager dan Administrator yang dapat menandai kedatangan barang.",
+      error: "Akses ditolak. Hanya Warehouse Manager yang dapat menandai kedatangan barang.",
     };
   }
 
@@ -366,10 +398,16 @@ export async function markRestockInspectingAction(prevState, formData) {
 export async function markRestockReceivedAction(orderId) {
   const session = await getSession();
 
-  if (!session || (session.role !== "warehouse_manager" && session.role !== "admin")) {
+  if (!session || session.role !== "warehouse_manager") {
+    if (session?.role === "admin") {
+      return {
+        success: false,
+        error: "Akses ditolak (403 Forbidden). Administrator hanya memiliki hak akses pemantauan (read-only).",
+      };
+    }
     return {
       success: false,
-      error: "Akses ditolak. Hanya Warehouse Manager dan Administrator yang dapat menandai kedatangan barang.",
+      error: "Akses ditolak. Hanya Warehouse Manager yang dapat menandai kedatangan barang.",
     };
   }
 
@@ -410,13 +448,18 @@ export async function markRestockReceivedAction(orderId) {
 }
 
 // Server Action bagi Warehouse Manager untuk mengajukan klaim refund atas pesanan yang ditolak/dikembalikan (Returned)
-// Hak akses: warehouse_manager & admin
+// Hak akses: warehouse_manager
 export async function claimRefundAction(prevState, formData) {
   const session = await getSession();
 
-  if (!session || (session.role !== "warehouse_manager" && session.role !== "admin")) {
+  if (!session || session.role !== "warehouse_manager") {
+    if (session?.role === "admin") {
+      return {
+        error: "Akses ditolak (403 Forbidden). Administrator hanya memiliki hak akses pemantauan (read-only).",
+      };
+    }
     return {
-      error: "Akses ditolak. Hanya Warehouse Manager dan Administrator yang dapat mengajukan klaim refund.",
+      error: "Akses ditolak. Hanya Warehouse Manager yang dapat mengajukan klaim refund.",
     };
   }
 
@@ -457,14 +500,19 @@ export async function claimRefundAction(prevState, formData) {
   }
 }
 
-// Server Action bagi Warehouse Manager dan Administrator untuk menilai performa supplier
-// Hak akses: warehouse_manager & admin
+// Server Action bagi Warehouse Manager untuk menilai performa supplier
+// Hak akses: warehouse_manager
 export async function rateSupplierOrderAction(prevState, formData) {
   const session = await getSession();
 
-  if (!session || (session.role !== "warehouse_manager" && session.role !== "admin")) {
+  if (!session || session.role !== "warehouse_manager") {
+    if (session?.role === "admin") {
+      return {
+        error: "Akses ditolak (403 Forbidden). Administrator hanya memiliki hak akses pemantauan (read-only).",
+      };
+    }
     return {
-      error: "Akses ditolak. Hanya Warehouse Manager dan Administrator yang dapat memberikan penilaian supplier.",
+      error: "Akses ditolak. Hanya Warehouse Manager yang dapat memberikan penilaian supplier.",
     };
   }
 

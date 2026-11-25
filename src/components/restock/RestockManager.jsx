@@ -449,8 +449,8 @@ export default function RestockManager({
             <span>Ekspor CSV</span>
           </Button>
 
-          {/* Tombol Buat Pesanan Restock (Warehouse Manager & Admin) */}
-          {(userRole === "warehouse_manager" || userRole === "admin") && (
+          {/* Tombol Buat Pesanan Restock (Khusus Warehouse Manager) */}
+          {userRole === "warehouse_manager" && (
             <Button
               onClick={() => setModalMode("create")}
               className="rounded-xl bg-rakta-primary hover:bg-rakta-primary-hover text-white text-xs font-semibold px-4 py-2 flex items-center gap-1.5 cursor-pointer shadow-xs"
@@ -659,8 +659,8 @@ export default function RestockManager({
                           </div>
                         )}
 
-                        {/* Aksi Khusus Warehouse Manager & Admin */}
-                        {(userRole === "warehouse_manager" || userRole === "admin") && (
+                        {/* Aksi Khusus Warehouse Manager */}
+                        {userRole === "warehouse_manager" && (
                           <div className="flex items-center justify-end gap-2">
                             {order.status === "pending" && (
                               <button
@@ -749,6 +749,24 @@ export default function RestockManager({
                                 {order.status === "confirmed" ? "Sedang Disiapkan Supplier" : "Dibatalkan"}
                               </span>
                             )}
+                          </div>
+                        )}
+
+                        {/* Aksi Khusus Admin (Monitoring Only / Read-Only) */}
+                        {userRole === "admin" && (
+                          <div className="flex items-center justify-end gap-1.5">
+                            {order.rating && (
+                              <div
+                                className="inline-flex items-center gap-1 text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-xl"
+                                title={order.review_note ? `Ulasan: "${order.review_note}"` : "Rating tersimpan"}
+                              >
+                                <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-500" />
+                                <span className="font-mono tabular-nums">{order.rating} / 5</span>
+                              </div>
+                            )}
+                            <span className="text-xs text-rakta-muted font-medium bg-rakta-surface px-2.5 py-1 rounded-xl border border-rakta-border">
+                              Mode Pantau
+                            </span>
                           </div>
                         )}
 

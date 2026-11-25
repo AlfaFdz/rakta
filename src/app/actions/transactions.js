@@ -7,15 +7,21 @@ import { revalidatePath } from "next/cache";
 // ALUR BARANG MASUK
 
 // 1. Staff Gudang membuat dokumen Incoming Transaction berdasarkan PO berstatus 'received'
-// Hak akses: staff_gudang & admin
+// Hak akses: staff_gudang
 // CATATAN: Status awal 'pending', stok fisik BELUM bertambah
 export async function createIncomingFromRestockAction(orderId, catatanInput) {
   const session = await getSession();
 
-  if (!session || (session.role !== "staff_gudang" && session.role !== "admin")) {
+  if (!session || session.role !== "staff_gudang") {
+    if (session?.role === "admin") {
+      return {
+        success: false,
+        error: "Akses ditolak (403 Forbidden). Administrator hanya memiliki hak akses pemantauan (read-only).",
+      };
+    }
     return {
       success: false,
-      error: "Akses ditolak. Hanya Staff Gudang dan Administrator yang dapat membuat dokumen barang masuk.",
+      error: "Akses ditolak. Hanya Staff Gudang yang dapat membuat dokumen barang masuk.",
     };
   }
 
@@ -112,15 +118,21 @@ export async function createIncomingFromRestockAction(orderId, catatanInput) {
 }
 
 // 2. Warehouse Manager menyetujui Incoming Transaction
-// Hak akses: warehouse_manager & admin
+// Hak akses: warehouse_manager
 // TRANSAKSI SQL ATOMIK: Stok produk bertambah (stock = stock + qty) tepat saat Approve
 export async function approveIncomingTransactionAction(transactionId) {
   const session = await getSession();
 
-  if (!session || (session.role !== "warehouse_manager" && session.role !== "admin")) {
+  if (!session || session.role !== "warehouse_manager") {
+    if (session?.role === "admin") {
+      return {
+        success: false,
+        error: "Akses ditolak (403 Forbidden). Administrator hanya memiliki hak akses pemantauan (read-only).",
+      };
+    }
     return {
       success: false,
-      error: "Akses ditolak. Hanya Warehouse Manager dan Administrator yang dapat menyetujui transaksi barang masuk.",
+      error: "Akses ditolak. Hanya Warehouse Manager yang dapat menyetujui transaksi barang masuk.",
     };
   }
 
@@ -223,14 +235,20 @@ export async function approveIncomingTransactionAction(transactionId) {
 }
 
 // 3. Warehouse Manager menolak Incoming Transaction
-// Hak akses: warehouse_manager & admin
+// Hak akses: warehouse_manager
 export async function rejectIncomingTransactionAction(transactionId, reason) {
   const session = await getSession();
 
-  if (!session || (session.role !== "warehouse_manager" && session.role !== "admin")) {
+  if (!session || session.role !== "warehouse_manager") {
+    if (session?.role === "admin") {
+      return {
+        success: false,
+        error: "Akses ditolak (403 Forbidden). Administrator hanya memiliki hak akses pemantauan (read-only).",
+      };
+    }
     return {
       success: false,
-      error: "Akses ditolak. Hanya Warehouse Manager dan Administrator yang dapat menolak transaksi.",
+      error: "Akses ditolak. Hanya Warehouse Manager yang dapat menolak transaksi.",
     };
   }
 
@@ -298,14 +316,19 @@ export async function rejectIncomingTransactionAction(transactionId, reason) {
 // ALUR BARANG KELUAR
 
 // 1. Staff Gudang menginput pengajuan Outgoing Transaction (status: pending)
-// Hak akses: staff_gudang & admin
+// Hak akses: staff_gudang
 // Validasi ketat: qty <= jumlah_stok saat ini. Stok BELUM berkurang.
 export async function createOutgoingTransactionAction(prevState, formData) {
   const session = await getSession();
 
-  if (!session || (session.role !== "staff_gudang" && session.role !== "admin")) {
+  if (!session || session.role !== "staff_gudang") {
+    if (session?.role === "admin") {
+      return {
+        error: "Akses ditolak (403 Forbidden). Administrator hanya memiliki hak akses pemantauan (read-only).",
+      };
+    }
     return {
-      error: "Akses ditolak. Hanya Staff Gudang dan Administrator yang dapat mengajukan barang keluar.",
+      error: "Akses ditolak. Hanya Staff Gudang yang dapat mengajukan barang keluar.",
     };
   }
 
@@ -388,15 +411,21 @@ export async function createOutgoingTransactionAction(prevState, formData) {
 }
 
 // 2. Warehouse Manager menyetujui Outgoing Transaction (pending -> approved)
-// Hak akses: warehouse_manager & admin
+// Hak akses: warehouse_manager
 // CATATAN: Saat Manager approve, STOK BELUM BERKURANG (barang masuk tahap packing)
 export async function approveOutgoingTransactionAction(transactionId) {
   const session = await getSession();
 
-  if (!session || (session.role !== "warehouse_manager" && session.role !== "admin")) {
+  if (!session || session.role !== "warehouse_manager") {
+    if (session?.role === "admin") {
+      return {
+        success: false,
+        error: "Akses ditolak (403 Forbidden). Administrator hanya memiliki hak akses pemantauan (read-only).",
+      };
+    }
     return {
       success: false,
-      error: "Akses ditolak. Hanya Warehouse Manager dan Administrator yang dapat menyetujui pengajuan barang keluar.",
+      error: "Akses ditolak. Hanya Warehouse Manager yang dapat menyetujui pengajuan barang keluar.",
     };
   }
 
@@ -435,14 +464,20 @@ export async function approveOutgoingTransactionAction(transactionId) {
 }
 
 // 3. Warehouse Manager menolak Outgoing Transaction (pending -> rejected)
-// Hak akses: warehouse_manager & admin
+// Hak akses: warehouse_manager
 export async function rejectOutgoingTransactionAction(transactionId, reason) {
   const session = await getSession();
 
-  if (!session || (session.role !== "warehouse_manager" && session.role !== "admin")) {
+  if (!session || session.role !== "warehouse_manager") {
+    if (session?.role === "admin") {
+      return {
+        success: false,
+        error: "Akses ditolak (403 Forbidden). Administrator hanya memiliki hak akses pemantauan (read-only).",
+      };
+    }
     return {
       success: false,
-      error: "Akses ditolak. Hanya Warehouse Manager dan Administrator yang dapat menolak transaksi.",
+      error: "Akses ditolak. Hanya Warehouse Manager yang dapat menolak transaksi.",
     };
   }
 
@@ -485,15 +520,21 @@ export async function rejectOutgoingTransactionAction(transactionId, reason) {
 }
 
 // 4. Staff Gudang mengeksekusi pengiriman barang (approved -> completed)
-// Hak akses: staff_gudang & admin
+// Hak akses: staff_gudang
 // TRANSAKSI SQL ATOMIK: Stok berkurang (stock = stock - qty) tepat saat tombol Kirim Barang ditekan
 export async function dispatchOutgoingTransactionAction(transactionId) {
   const session = await getSession();
 
-  if (!session || (session.role !== "staff_gudang" && session.role !== "admin")) {
+  if (!session || session.role !== "staff_gudang") {
+    if (session?.role === "admin") {
+      return {
+        success: false,
+        error: "Akses ditolak (403 Forbidden). Administrator hanya memiliki hak akses pemantauan (read-only).",
+      };
+    }
     return {
       success: false,
-      error: "Akses ditolak. Hanya Staff Gudang dan Administrator yang dapat mengeksekusi pengiriman barang.",
+      error: "Akses ditolak. Hanya Staff Gudang yang dapat mengeksekusi pengiriman barang.",
     };
   }
 
@@ -588,12 +629,17 @@ export async function dispatchOutgoingTransactionAction(transactionId) {
 }
 
 // 5. Staff Gudang mengedit Outgoing Transaction yang masih berstatus 'pending' miliknya
-// Hak akses: staff_gudang & admin (transaksi yang diajukan sendiri, atau admin)
+// Hak akses: staff_gudang (transaksi yang diajukan sendiri)
 export async function updatePendingOutgoingTransactionAction(prevState, formData) {
   const session = await getSession();
 
-  if (!session || (session.role !== "staff_gudang" && session.role !== "admin")) {
-    return { error: "Akses ditolak. Anda tidak memiliki izin mengubah transaksi barang keluar." };
+  if (!session || session.role !== "staff_gudang") {
+    if (session?.role === "admin") {
+      return {
+        error: "Akses ditolak (403 Forbidden). Administrator hanya memiliki hak akses pemantauan (read-only).",
+      };
+    }
+    return { error: "Akses ditolak. Hanya Staff Gudang yang dapat mengubah transaksi barang keluar." };
   }
 
   const transactionId = parseInt(formData.get("transaction_id"), 10);
@@ -696,12 +742,18 @@ export async function updatePendingOutgoingTransactionAction(prevState, formData
 }
 
 // 6. Staff Gudang menghapus Outgoing Transaction yang masih berstatus 'pending' miliknya
-// Hak akses: staff_gudang & admin (transaksi yang diajukan sendiri, atau admin)
+// Hak akses: staff_gudang (transaksi yang diajukan sendiri)
 export async function deletePendingOutgoingTransactionAction(transactionId) {
   const session = await getSession();
 
-  if (!session || (session.role !== "staff_gudang" && session.role !== "admin")) {
-    return { success: false, error: "Akses ditolak. Anda tidak memiliki izin menghapus transaksi." };
+  if (!session || session.role !== "staff_gudang") {
+    if (session?.role === "admin") {
+      return {
+        success: false,
+        error: "Akses ditolak (403 Forbidden). Administrator hanya memiliki hak akses pemantauan (read-only).",
+      };
+    }
+    return { success: false, error: "Akses ditolak. Hanya Staff Gudang yang dapat menghapus transaksi." };
   }
 
   const id = parseInt(transactionId, 10);

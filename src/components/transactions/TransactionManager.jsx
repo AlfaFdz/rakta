@@ -435,7 +435,8 @@ export default function TransactionManager({
             <span>Ekspor CSV</span>
           </Button>
 
-          {(userRole === "staff_gudang" || userRole === "admin") && (
+          {/* Tombol Ajukan Barang Keluar (Khusus Staff Gudang) */}
+          {userRole === "staff_gudang" && (
             <Button
               onClick={() => {
                 setSelectedProductForOut(null);
@@ -522,18 +523,24 @@ export default function TransactionManager({
                     </div>
 
                     <div className="pt-2">
-                      <Button
-                        onClick={() => {
-                          setSelectedReceivedOrder(ro);
-                          setIncomingNotesInput("");
-                          setModalMode("incoming_po");
-                        }}
-                        disabled={isItemProcessing}
-                        className="w-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium py-2 flex items-center justify-center gap-1.5"
-                      >
-                        <FileText className="w-3.5 h-3.5" />
-                        <span>Buat Dokumen Masuk</span>
-                      </Button>
+                      {userRole === "staff_gudang" ? (
+                        <Button
+                          onClick={() => {
+                            setSelectedReceivedOrder(ro);
+                            setIncomingNotesInput("");
+                            setModalMode("incoming_po");
+                          }}
+                          disabled={isItemProcessing}
+                          className="w-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium py-2 flex items-center justify-center gap-1.5"
+                        >
+                          <FileText className="w-3.5 h-3.5" />
+                          <span>Buat Dokumen Masuk</span>
+                        </Button>
+                      ) : (
+                        <div className="w-full text-center py-2 px-3 rounded-xl bg-rakta-surface border border-rakta-border text-xs text-rakta-muted font-medium">
+                          Menunggu Input Staff (Mode Pantau)
+                        </div>
+                      )}
                     </div>
                   </div>
                 );
@@ -734,7 +741,8 @@ export default function TransactionManager({
 
                       {/* Aksi Berdasarkan Peran Pengguna */}
                       <td className="px-5 py-3.5 text-right">
-                        {(userRole === "warehouse_manager" || userRole === "admin") && (
+                        {/* Aksi Khusus Warehouse Manager */}
+                        {userRole === "warehouse_manager" && (
                           <div className="flex items-center justify-end gap-1.5">
                             {t.status === "pending" && (
                               <>
@@ -780,6 +788,15 @@ export default function TransactionManager({
                                 Selesai
                               </span>
                             )}
+                          </div>
+                        )}
+
+                        {/* Aksi Khusus Admin (Monitoring Only / Read-Only) */}
+                        {userRole === "admin" && (
+                          <div className="text-right">
+                            <span className="text-xs text-rakta-muted font-medium bg-rakta-surface px-2.5 py-0.5 rounded-lg border border-rakta-border">
+                              Mode Pantau
+                            </span>
                           </div>
                         )}
 
