@@ -456,7 +456,7 @@ export default function RestockManager({
               className="rounded-xl bg-rakta-primary hover:bg-rakta-primary-hover text-white text-xs font-semibold px-4 py-2 flex items-center gap-1.5 cursor-pointer shadow-xs"
             >
               <Plus className="w-4 h-4" />
-              <span>Buat Pesanan Restock</span>
+              <span>Pesanan Restock</span>
             </Button>
           )}
         </div>
@@ -1040,7 +1040,7 @@ export default function RestockManager({
               Pesanan <span className="font-bold text-rakta-navy font-mono">{selectedOrder.nomor_po}</span> akan ditandai dalam perjalanan (In Transit). Masukkan nomor resi atau ekspedisi pengiriman.
             </p>
 
-            <form action={shipAction} encType="multipart/form-data" className="mt-4 space-y-4">
+            <form action={shipAction} className="mt-4 space-y-4">
               <input type="hidden" name="order_id" value={selectedOrder.id} />
 
               <div>
@@ -1151,7 +1151,7 @@ export default function RestockManager({
               Tandai barang pesanan <span className="font-bold text-rakta-navy font-mono">{selectedOrder.nomor_po}</span> telah tiba di gudang. Status akan beralih ke <span className="font-semibold text-amber-700">Inspecting</span> agar Staff Gudang dapat melakukan pemeriksaan fisik dan menginput dokumen masuk.
             </p>
 
-            <form action={inspectAction} encType="multipart/form-data" className="mt-4 space-y-4">
+            <form action={inspectAction} className="mt-4 space-y-4">
               <input type="hidden" name="order_id" value={selectedOrder.id} />
 
               <div className="space-y-2">
